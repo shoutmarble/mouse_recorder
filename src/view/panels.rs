@@ -1,0 +1,622 @@
+use super::*;
+
+fn speed_slider_style(is_inactive: bool) -> iced::widget::slider::Style {
+    let active_blue = Color::from_rgb8(0x34, 0x88, 0xff);
+    let inactive_gray = Color::from_rgb8(0x7b, 0x86, 0x95);
+    let rail_color = if is_inactive {
+        inactive_gray
+    } else {
+        active_blue
+    };
+
+    iced::widget::slider::Style {
+        rail: iced::widget::slider::Rail {
+            backgrounds: (Background::Color(rail_color), Background::Color(rail_color)),
+            width: 4.0,
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 2.0.into(),
+            },
+        },
+        handle: iced::widget::slider::Handle {
+            shape: iced::widget::slider::HandleShape::Circle { radius: 8.0 },
+            background: Background::Color(rail_color),
+            border_width: 1.0,
+            border_color: Color::from_rgb8(0xea, 0xee, 0xf4),
+        },
+    }
+}
+
+impl App {
+    pub(crate) fn view_scale_panel(&self) -> Element<'_, Message> {
+        let slider_and_ticks = iced::widget::column![
+            slider(25..=100, self.ui_scale_percent, Message::UiScaleChanged)
+                .width(Length::Fill),
+            row![
+                text("0.25").size(11),
+                container(iced::widget::Space::new()).width(Length::Fill),
+                text("0.5").size(11),
+                container(iced::widget::Space::new()).width(Length::Fill),
+                text("0.75").size(11),
+                container(iced::widget::Space::new()).width(Length::Fill),
+                text("1.0").size(11),
+            ]
+            .width(Length::Fill)
+            .align_y(alignment::Alignment::Center),
+        ]
+        .spacing(2)
+        .width(Length::Fill);
+
+        let slider_row = row![
+            text("Scale:").size(14).width(Length::Fixed(56.0)),
+            slider_and_ticks,
+            text(format!("{:.2}x", self.ui_scale_factor())).size(12),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        container(slider_row)
+            .padding(10)
+            .width(Length::Fill)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x1f, 0x22, 0x26))),
+                border: Border {
+                    color: Color::from_rgb8(0x3a, 0x3f, 0x46),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into()
+    }
+
+    pub(crate) fn view_click_editor_panel(&self) -> Element<'_, Message> {
+        const PREVIEW_IMAGE_SIZE: f32 = 128.0;
+        const PREVIEW_FRAME_PADDING: f32 = 2.0;
+        const PREVIEW_FRAMED_SIZE: f32 = PREVIEW_IMAGE_SIZE + PREVIEW_FRAME_PADDING * 2.0;
+        const PREVIEW_FRAME_RADIUS: f32 = 6.0;
+        const PREVIEW_INNER_RADIUS: f32 = 0.0;
+        const PREVIEW_TITLE_H: f32 = 34.0;
+        const TARGET_COL_W: f32 = 140.0;
+
+        let right_preview_border = if self.editor_capture_armed {
+            Color::from_rgb8(0xe5, 0x39, 0x35)
+        } else {
+            Color::from_rgb8(0x00, 0x8f, 0xd5)
+        };
+
+        let fmt_xy = |pos: Option<(i32, i32)>| -> String {
+            match pos {
+                Some((x, y)) => format!("({x:>6}, {y:>6})"),
+                None => "(     ?,      ?)".to_string(),
+            }
+        };
+
+        let live_xy_text = fmt_xy(self.current_pos);
+
+        let grabbed_xy_text = fmt_xy(match (
+            self.editor_x_text.trim().parse::<i32>().ok(),
+            self.editor_y_text.trim().parse::<i32>().ok(),
+        ) {
+            (Some(x), Some(y)) => Some((x, y)),
+            _ => None,
+        });
+
+        let capture_status_text = if self.editor_capture_armed {
+            "Armed: click L/R/M"
+        } else {
+            match self.editor_last_capture_button {
+                Some("Left") => "Last capture: Left",
+                Some("Right") => "Last capture: Right",
+                Some("Middle") => "Last capture: Middle",
+                _ => "Last capture: —",
+            }
+        };
+
+        let capture_status_color = if self.editor_capture_armed {
+            Color::from_rgb8(0xff, 0xc1, 0x07)
+        } else if self.editor_last_capture_button.is_some() {
+            Color::from_rgb8(0x8b, 0xd4, 0x9b)
+        } else {
+            Color::from_rgb8(0xb6, 0xc1, 0xcf)
+        };
+
+        let target_mode_box = || -> Element<Message> {
+            let xy_row = radio(
+                "(X,Y)",
+                false,
+                Some(self.editor_use_find_image),
+                Message::EditorUseFindImageToggled,
+            );
+
+            let image_row = radio(
+                "(find target)",
+                true,
+                Some(self.editor_use_find_image),
+                Message::EditorUseFindImageToggled,
+            );
+
+            container(
+                iced::widget::column![xy_row, image_row]
+                    .spacing(6)
+                    .align_x(alignment::Alignment::Start),
+            )
+            .padding(8)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+                border: Border {
+                    color: Color::from_rgb8(0x76, 0x85, 0x96),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into()
+        };
+
+        let static_preview: Element<Message> = if let Some(b64) = self.editor_static_preview_patch_b64.as_deref() {
+            if let Some(handle) = self.preview_handle_from_base64(b64) {
+                container(
+                    iced::widget::column![
+                        container(text("Grabbed preview (GET X,Y)").size(12))
+                            .height(Length::Fixed(PREVIEW_TITLE_H))
+                            .align_y(alignment::Vertical::Center),
+                        row![
+                            iced::widget::column![
+                                container(
+                                    container(
+                                        image(handle)
+                                            .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                            .height(Length::Fixed(PREVIEW_IMAGE_SIZE)),
+                                    )
+                                    .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                    .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                    .style(|_| iced::widget::container::Style {
+                                        text_color: None,
+                                        background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                        border: Border {
+                                            color: Color::TRANSPARENT,
+                                            width: 0.0,
+                                            radius: PREVIEW_INNER_RADIUS.into(),
+                                        },
+                                        shadow: Shadow::default(),
+                                        snap: false,
+                                    }),
+                                )
+                                .padding(PREVIEW_FRAME_PADDING)
+                                .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                .style(move |_| iced::widget::container::Style {
+                                    text_color: None,
+                                    background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                    border: Border {
+                                        color: right_preview_border,
+                                        width: 2.0,
+                                        radius: PREVIEW_FRAME_RADIUS.into(),
+                                    },
+                                    shadow: Shadow::default(),
+                                    snap: false,
+                                }),
+                                text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                text(format!("LIVE: {live_xy_text}")).size(12),
+                            ]
+                            .spacing(4),
+                            iced::widget::column![
+                                text(capture_status_text).size(12).color(capture_status_color),
+                                button(text("GET (X,Y)"))
+                                    .on_press(Message::EditorStartGetXY),
+                                target_mode_box(),
+                            ]
+                            .spacing(10)
+                            .align_x(alignment::Alignment::Start),
+                        ]
+                        .spacing(16)
+                        .align_y(alignment::Alignment::Start)
+                        .width(Length::Fill),
+                    ]
+                    .spacing(4),
+                )
+                .width(Length::FillPortion(1))
+                .into()
+            } else {
+                container(
+                    iced::widget::column![
+                        container(text("Grabbed preview (GET X,Y)").size(12))
+                            .height(Length::Fixed(PREVIEW_TITLE_H))
+                            .align_y(alignment::Vertical::Center),
+                        row![
+                            iced::widget::column![
+                                text("(static preview failed)").size(12),
+                                text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                text(format!("LIVE: {live_xy_text}")).size(12),
+                            ]
+                            .spacing(4),
+                            iced::widget::column![
+                                text(capture_status_text).size(12).color(capture_status_color),
+                                button(text("GET (X,Y)"))
+                                    .on_press(Message::EditorStartGetXY),
+                                target_mode_box(),
+                            ]
+                            .spacing(10)
+                            .align_x(alignment::Alignment::Start),
+                        ]
+                        .spacing(16)
+                        .align_y(alignment::Alignment::Start)
+                        .width(Length::Fill),
+                    ]
+                    .spacing(4),
+                )
+                .width(Length::FillPortion(1))
+                .into()
+            }
+        } else {
+            container(
+                iced::widget::column![
+                    container(text("Grabbed preview (GET X,Y)").size(12))
+                        .height(Length::Fixed(PREVIEW_TITLE_H))
+                        .align_y(alignment::Vertical::Center),
+                    row![
+                        iced::widget::column![
+                            container(
+                                container(text("128 px x 128 px").size(14))
+                                    .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                    .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                    .align_x(alignment::Horizontal::Center)
+                                    .align_y(alignment::Vertical::Center)
+                                    .style(|_| iced::widget::container::Style {
+                                        text_color: None,
+                                        background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                        border: Border {
+                                            color: Color::TRANSPARENT,
+                                            width: 0.0,
+                                            radius: PREVIEW_INNER_RADIUS.into(),
+                                        },
+                                        shadow: Shadow::default(),
+                                        snap: false,
+                                    }),
+                            )
+                            .padding(PREVIEW_FRAME_PADDING)
+                            .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                            .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                            .style(move |_| iced::widget::container::Style {
+                                text_color: None,
+                                background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                border: Border {
+                                    color: right_preview_border,
+                                    width: 2.0,
+                                    radius: PREVIEW_FRAME_RADIUS.into(),
+                                },
+                                shadow: Shadow::default(),
+                                snap: false,
+                            }),
+                            text(format!("GET:  {grabbed_xy_text}")).size(12),
+                            text(format!("LIVE: {live_xy_text}")).size(12),
+                        ]
+                        .spacing(4),
+                        iced::widget::column![
+                            text(capture_status_text).size(12).color(capture_status_color),
+                            button(text("GET (X,Y)"))
+                                .on_press(Message::EditorStartGetXY),
+                            target_mode_box(),
+                        ]
+                        .spacing(10)
+                        .align_x(alignment::Alignment::Start),
+                    ]
+                    .spacing(16)
+                    .align_y(alignment::Alignment::Start)
+                    .width(Length::Fill),
+                ]
+                .spacing(4),
+            )
+            .width(Length::FillPortion(1))
+            .into()
+        };
+
+        let static_preview: Element<Message> = container(static_preview)
+            .padding(6)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x1b, 0x1f, 0x26))),
+                border: Border {
+                    color: Color::from_rgb8(0x4a, 0x81, 0xb0),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into();
+
+        let left_row = self.view_click_target_modes_row(
+            ClickTarget::Left,
+            self.editor_left_mode,
+            Message::EditorLeftModeSelected,
+            TARGET_COL_W,
+        );
+        let right_row = self.view_click_target_modes_row(
+            ClickTarget::Right,
+            self.editor_right_mode,
+            Message::EditorRightModeSelected,
+            TARGET_COL_W,
+        );
+        let middle_row = self.view_click_target_modes_row(
+            ClickTarget::Middle,
+            self.editor_middle_mode,
+            Message::EditorMiddleModeSelected,
+            TARGET_COL_W,
+        );
+
+        let insert_btn_label = if self.selected_index.is_some() {
+            "APPLY TO SELECTED"
+        } else {
+            "INSERT CLICK"
+        };
+
+        let active_mode = self.active_editor_mode();
+        let speed_enabled = !matches!(active_mode, ClickEdgeMode::Up | ClickEdgeMode::Down);
+
+        let wait_group: Element<Message> = container(
+            iced::widget::column![
+                row![
+                    text("Wait:").size(14),
+                    slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
+                        .width(Length::Fixed(180.0)),
+                    text(format!("{} ms", self.editor_wait_ms)).size(12),
+                ]
+                .spacing(8)
+                .align_y(alignment::Alignment::Center),
+            ]
+            .spacing(8)
+            .align_x(alignment::Alignment::Start),
+        )
+        .padding(8)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+            border: Border {
+                color: Color::from_rgb8(0x76, 0x85, 0x96),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
+        let click_speed_slider = if speed_enabled {
+            slider(0..=100, self.editor_click_speed_ms, Message::EditorClickSpeedMsChanged)
+        } else {
+            slider(0..=100, self.editor_click_speed_ms, |_| Message::Noop)
+        }
+        .style(move |_theme, _status| speed_slider_style(!speed_enabled))
+        .width(Length::Fixed(180.0));
+
+        let speed_slider: Element<Message> = click_speed_slider.into();
+
+        let speed_row = row![
+            container(text("Click speed:").size(14))
+                .align_x(alignment::Horizontal::Left)
+                .width(Length::Fixed(TARGET_COL_W)),
+            speed_slider,
+            text(format!("{} ms", self.editor_click_speed_ms)).size(12),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let speed_row: Element<Message> = container(speed_row)
+            .style(move |_| iced::widget::container::Style {
+                text_color: if speed_enabled {
+                    None
+                } else {
+                    Some(Color::from_rgb8(0x8b, 0x94, 0xa1))
+                },
+                background: Some(Background::Color(if speed_enabled {
+                    Color::TRANSPARENT
+                } else {
+                    Color::from_rgb8(0x14, 0x17, 0x1c)
+                })),
+                border: Border {
+                    color: if speed_enabled {
+                        Color::TRANSPARENT
+                    } else {
+                        Color::from_rgb8(0x3e, 0x46, 0x52)
+                    },
+                    width: if speed_enabled { 0.0 } else { 1.0 },
+                    radius: 6.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .padding([4, 6])
+            .into();
+
+        let mouse_move_speed_row = row![
+            container(text("Mouse move speed:").size(14)).width(Length::Fixed(TARGET_COL_W)),
+            slider(
+                0..=500,
+                self.editor_mouse_move_speed_ms,
+                Message::EditorMouseMoveSpeedMsChanged,
+            )
+            .style(|_theme, _status| speed_slider_style(false))
+            .width(Length::Fixed(180.0)),
+            text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let mode_rows = iced::widget::column![
+            row![
+                container(text("Click target:").size(14)).width(Length::Fixed(TARGET_COL_W)),
+                text("Click properties:").size(14),
+            ]
+            .align_y(alignment::Alignment::Center)
+            .spacing(6),
+            left_row,
+            right_row,
+            middle_row,
+            speed_row,
+            mouse_move_speed_row,
+        ]
+        .spacing(6);
+
+        let mode_group: Element<Message> = container(
+            mode_rows,
+        )
+        .padding(8)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+            border: Border {
+                color: Color::from_rgb8(0x76, 0x85, 0x96),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
+        let mut button_items: Vec<Element<Message>> = vec![
+            container(button(text(insert_btn_label)).on_press(Message::EditorInsertOrApply))
+                .width(Length::Fill)
+                .align_x(alignment::Horizontal::Center)
+                .into(),
+        ];
+
+        if self.selected_index.is_some() {
+            button_items.push(
+                container(
+                    button(text("INSERT BELOW SELECTED"))
+                        .style(iced::widget::button::secondary)
+                        .on_press(Message::EditorInsertBelowSelected),
+                )
+                    .width(Length::Fill)
+                    .align_x(alignment::Horizontal::Center)
+                    .into(),
+            );
+        }
+
+        if self.editor_capture_armed {
+            button_items.push(
+                text("Capture armed: click Left/Right/Middle to set X,Y (ESC cancels)")
+                    .size(12)
+                    .into(),
+            );
+        }
+
+        let buttons_group: Element<Message> = container(
+            column(button_items).spacing(if self.editor_capture_armed || self.selected_index.is_some() { 8 } else { 0 }),
+        )
+        .padding(6)
+        .width(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x20, 0x25))),
+            border: Border {
+                color: Color::from_rgb8(0x7f, 0x8e, 0x9f),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
+        let preview_group = container(
+            row![static_preview]
+                .spacing(10)
+                .width(Length::Fill)
+                .align_y(alignment::Alignment::Start),
+        )
+        .padding(8)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x22, 0x27, 0x2f))),
+            border: Border {
+                color: Color::from_rgb8(0x6c, 0x78, 0x8a),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        });
+
+        let click_editor_content = iced::widget::column![
+            text("Click editor").size(16),
+            preview_group,
+            wait_group,
+            mode_group,
+            buttons_group,
+        ]
+        .spacing(6);
+
+        container(click_editor_content)
+            .padding(10)
+            .width(Length::Fill)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x15, 0x18, 0x1d))),
+                border: Border {
+                    color: Color::from_rgb8(0x8d, 0x9b, 0xb0),
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into()
+    }
+
+    pub(crate) fn view_properties_panel(&self) -> iced::widget::Container<'_, Message> {
+        let title_row = row![
+            text("Properties").size(16),
+            container(iced::widget::Space::new()).width(Length::Fill),
+            button(text("Clear")).on_press(Message::ClearSelection),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let body: Element<Message> = {
+            let selection_note: Element<Message> = match self.selected_index {
+                Some(index) => text(format!("Selected row: {}", index)).size(12).into(),
+                None => text("Selected row: none").size(12).into(),
+            };
+
+            iced::widget::column![
+                selection_note,
+                self.view_click_editor_panel(),
+            ]
+            .spacing(8)
+            .into()
+        };
+
+        let body_scroll_content = row![
+            container(body).width(Length::Fill),
+            container(iced::widget::Space::new()).width(Length::Fixed(8.0)),
+        ]
+        .width(Length::Fill);
+
+        let body_scroll = scrollable(body_scroll_content)
+            .height(Length::Fill);
+
+        container(iced::widget::column![title_row, body_scroll].spacing(12).padding(12))
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x1f, 0x22, 0x26))),
+                border: Border {
+                    color: Color::from_rgb8(0x3a, 0x3f, 0x46),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+    }
+}
