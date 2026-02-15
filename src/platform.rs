@@ -101,7 +101,6 @@ pub fn take_get_capture_hook_result() -> Option<(i32, i32, &'static str)> {
 pub fn ensure_get_capture_hook_thread() -> Result<(), String> {
     use std::sync::mpsc;
     use std::thread;
-    use windows::Win32::Foundation::{HINSTANCE, HWND};
     use windows::Win32::UI::WindowsAndMessaging::{
         DispatchMessageW, GetMessageW, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx,
         WH_MOUSE_LL, MSG,
@@ -114,7 +113,7 @@ pub fn ensure_get_capture_hook_thread() -> Result<(), String> {
     let (tx, rx) = mpsc::channel::<Result<(), String>>();
 
     thread::spawn(move || unsafe {
-        let hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(get_capture_mouse_hook_proc), HINSTANCE(0), 0) {
+        let hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(get_capture_mouse_hook_proc), None, 0) {
             Ok(hook) if !hook.is_invalid() => hook,
             _ => {
                 let _ = tx.send(Err("SetWindowsHookExW(WH_MOUSE_LL) failed".to_string()));
@@ -125,7 +124,7 @@ pub fn ensure_get_capture_hook_thread() -> Result<(), String> {
         let _ = tx.send(Ok(()));
 
         let mut msg = MSG::default();
-        while GetMessageW(&mut msg, HWND(0), 0, 0).as_bool() {
+        while GetMessageW(&mut msg, None, 0, 0).as_bool() {
             let _ = TranslateMessage(&msg);
             let _ = DispatchMessageW(&msg);
         }
@@ -151,7 +150,7 @@ unsafe extern "system" fn get_capture_mouse_hook_proc(
 ) -> windows::Win32::Foundation::LRESULT {
     use windows::Win32::Foundation::LRESULT;
     use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, HC_ACTION, HHOOK, MSLLHOOKSTRUCT,
+        CallNextHookEx, HC_ACTION, MSLLHOOKSTRUCT,
         WM_LBUTTONDOWN, WM_LBUTTONUP,
         WM_RBUTTONDOWN, WM_RBUTTONUP,
         WM_MBUTTONDOWN, WM_MBUTTONUP,
@@ -187,7 +186,7 @@ unsafe extern "system" fn get_capture_mouse_hook_proc(
         }
     }
 
-    CallNextHookEx(HHOOK(0), code, wparam, lparam)
+    CallNextHookEx(None, code, wparam, lparam)
 }
 
 #[cfg(windows)]
@@ -202,7 +201,6 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
     use ::image::{DynamicImage, ImageFormat, RgbaImage};
     use std::io::Cursor;
 
-    use windows::Win32::Foundation::HWND;
     use windows::Win32::Graphics::Gdi::*;
     let Some((screen_w, screen_h)) = win_screen_size() else {
         return Err("GetSystemMetrics returned invalid screen size".to_string());
@@ -216,28 +214,28 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
     top = top.clamp(0, screen_h - size);
 
     unsafe {
-        let hdc_screen = GetDC(HWND(0));
+        let hdc_screen = GetDC(None);
         if hdc_screen.is_invalid() {
             return Err("GetDC failed".to_string());
         }
-        let hdc_mem = CreateCompatibleDC(hdc_screen);
+        let hdc_mem = CreateCompatibleDC(Some(hdc_screen));
         if hdc_mem.is_invalid() {
-            let _ = ReleaseDC(HWND(0), hdc_screen);
+            let _ = ReleaseDC(None, hdc_screen);
             return Err("CreateCompatibleDC failed".to_string());
         }
 
         let hbmp = CreateCompatibleBitmap(hdc_screen, size, size);
         if hbmp.is_invalid() {
             let _ = DeleteDC(hdc_mem);
-            let _ = ReleaseDC(HWND(0), hdc_screen);
+            let _ = ReleaseDC(None, hdc_screen);
             return Err("CreateCompatibleBitmap failed".to_string());
         }
 
-        let old = SelectObject(hdc_mem, hbmp);
+        let old = SelectObject(hdc_mem, hbmp.into());
         if old.is_invalid() {
-            let _ = DeleteObject(hbmp);
+            let _ = DeleteObject(hbmp.into());
             let _ = DeleteDC(hdc_mem);
-            let _ = ReleaseDC(HWND(0), hdc_screen);
+            let _ = ReleaseDC(None, hdc_screen);
             return Err("SelectObject failed".to_string());
         }
 
@@ -247,7 +245,7 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
             0,
             size,
             size,
-            hdc_screen,
+            Some(hdc_screen),
             left,
             top,
             SRCCOPY,
@@ -255,9 +253,9 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
         .is_ok();
         if !ok {
             let _ = SelectObject(hdc_mem, old);
-            let _ = DeleteObject(hbmp);
+            let _ = DeleteObject(hbmp.into());
             let _ = DeleteDC(hdc_mem);
-            let _ = ReleaseDC(HWND(0), hdc_screen);
+            let _ = ReleaseDC(None, hdc_screen);
             return Err("BitBlt failed".to_string());
         }
 
@@ -296,9 +294,9 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
         );
         if lines == 0 {
             let _ = SelectObject(hdc_mem, old);
-            let _ = DeleteObject(hbmp);
+            let _ = DeleteObject(hbmp.into());
             let _ = DeleteDC(hdc_mem);
-            let _ = ReleaseDC(HWND(0), hdc_screen);
+            let _ = ReleaseDC(None, hdc_screen);
             return Err("GetDIBits failed".to_string());
         }
 
@@ -322,9 +320,9 @@ pub fn capture_patch_png_base64(center_x: i32, center_y: i32, patch_size: u32) -
             .map_err(|e| e.to_string())?;
 
         let _ = SelectObject(hdc_mem, old);
-        let _ = DeleteObject(hbmp);
+        let _ = DeleteObject(hbmp.into());
         let _ = DeleteDC(hdc_mem);
-        let _ = ReleaseDC(HWND(0), hdc_screen);
+        let _ = ReleaseDC(None, hdc_screen);
 
         Ok(general_purpose::STANDARD.encode(png))
     }
