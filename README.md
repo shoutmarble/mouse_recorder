@@ -1,5 +1,9 @@
 # Mouse Recorder GUI (`rustautogui_gui`)
 
+## Mouse Recorder Screenshot
+
+![Mouse Recorder GUI](./mouse_recorder.png)
+
 This repository is a standard single-crate Cargo project for the mouse recorder GUI app.
 
 The app uses the published crate from crates.io:
