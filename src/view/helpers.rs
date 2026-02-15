@@ -146,14 +146,14 @@ impl App {
                 on_mode_selected,
             ),
             radio(
-                ClickEdgeMode::Double.label(),
-                ClickEdgeMode::Double,
+                ClickEdgeMode::Auto.label(),
+                ClickEdgeMode::Auto,
                 Some(selected_mode),
                 on_mode_selected,
             ),
             radio(
-                ClickEdgeMode::Auto.label(),
-                ClickEdgeMode::Auto,
+                ClickEdgeMode::Double.label(),
+                ClickEdgeMode::Double,
                 Some(selected_mode),
                 on_mode_selected,
             ),

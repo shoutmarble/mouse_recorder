@@ -50,6 +50,8 @@ pub(crate) enum Message {
     EditorWaitMsChanged(u16),
     EditorClickSpeedMsChanged(u16),
     EditorMouseMoveSpeedMsChanged(u16),
+    EditorTargetPrecisionChanged(u16),
+    EditorTargetTimeoutMsChanged(u16),
     EditorUseFindImageToggled(bool),
     EditorStartGetXY,
     EditorInsertOrApply,

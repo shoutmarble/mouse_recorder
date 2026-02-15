@@ -4,6 +4,9 @@ use base64::engine::general_purpose;
 use base64::Engine;
 use rustautogui::{MatchMode, MouseClick, RustAutoGui};
 
+const CLICK_TARGET_DEFAULT_PRECISION: f32 = 0.90;
+const CLICK_TARGET_DEFAULT_TIMEOUT_MS: u64 = 2000;
+
 pub(crate) fn playback(
     events: Vec<RecordedEvent>,
     cancel: Arc<AtomicBool>,
@@ -114,56 +117,41 @@ pub(crate) fn playback(
                 search_anchor,
                 search_region_size,
             } => {
-                let patch_png = general_purpose::STANDARD
-                    .decode(patch_png_base64)
-                    .map_err(|e| anyhow::anyhow!("FindTarget decode failed: {e}"))?;
-
                 let anchor_pos = match search_anchor {
                     SearchAnchor::RecordedClick => pos,
                     SearchAnchor::CurrentMouse => get_mouse_pos().or(pos).or(last_smart_found),
                     SearchAnchor::LastFound => last_smart_found.or(pos).or(get_mouse_pos()),
                 };
+                let found = find_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    &patch_png_base64,
+                    precision,
+                    timeout_ms,
+                    search_region_size,
+                    anchor_pos,
+                )?;
 
-                let region = match (search_region_size, anchor_pos) {
-                    (Some(size), Some((x, y))) => {
-                        let (sw, sh) = gui.get_screen_size();
-                        compute_region_around_point(sw, sh, x, y, size)
-                    }
-                    _ => None,
-                };
-
-                gui.prepare_template_from_raw_encoded(&patch_png, region, MatchMode::FFT)?;
-
-                let started_at = Instant::now();
-                let timeout = Duration::from_millis(timeout_ms);
-
-                loop {
-                    if cancel.load(Ordering::Relaxed) {
-                        anyhow::bail!("Cancelled");
-                    }
-                    if started_at.elapsed() > timeout {
-                        anyhow::bail!("FindTarget timed out ({} ms)", timeout_ms);
-                    }
-
-                    match gui.find_image_on_screen(precision)? {
-                        Some(locations) if !locations.is_empty() => {
-                            let (x, y, _corr) = locations[0];
-                            last_smart_found = Some((x as i32, y as i32));
-                            move_mouse_with_speed(
-                                &mut gui,
-                                &cancel,
-                                &mut current_pos,
-                                (x as i32, y as i32),
-                                mouse_move_speed_ms,
-                            )?;
-                            break;
-                        }
-                        _ => std::thread::sleep(Duration::from_millis(50)),
-                    }
-                }
+                move_mouse_with_speed(
+                    &mut gui,
+                    &cancel,
+                    &mut current_pos,
+                    found,
+                    mouse_move_speed_ms,
+                )?;
             }
-            RecordedEventKind::LeftDown { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::LeftDown { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -174,8 +162,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_down(MouseClick::LEFT);
             }
-            RecordedEventKind::LeftUp { .. } => {
-                if let Some(target) = pos {
+            RecordedEventKind::LeftUp { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some(target) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -186,8 +183,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_up(MouseClick::LEFT);
             }
-            RecordedEventKind::LeftClick { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::LeftClick { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -208,8 +214,17 @@ pub(crate) fn playback(
                     click_once_with_speed(&mut gui, MouseButton::Left, click_speed_ms);
                 }
             }
-            RecordedEventKind::RightDown { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::RightDown { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -220,8 +235,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_down(MouseClick::RIGHT);
             }
-            RecordedEventKind::RightUp { .. } => {
-                if let Some(target) = pos {
+            RecordedEventKind::RightUp { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some(target) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -232,8 +256,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_up(MouseClick::RIGHT);
             }
-            RecordedEventKind::RightClick { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::RightClick { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -254,8 +287,17 @@ pub(crate) fn playback(
                     click_once_with_speed(&mut gui, MouseButton::Right, click_speed_ms);
                 }
             }
-            RecordedEventKind::MiddleDown { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::MiddleDown { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -266,8 +308,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_down(MouseClick::MIDDLE);
             }
-            RecordedEventKind::MiddleUp { .. } => {
-                if let Some(target) = pos {
+            RecordedEventKind::MiddleUp { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some(target) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -278,8 +329,17 @@ pub(crate) fn playback(
                 }
                 let _ = gui.click_up(MouseClick::MIDDLE);
             }
-            RecordedEventKind::MiddleClick { .. } => {
-                if let Some((x, y)) = pos {
+            RecordedEventKind::MiddleClick { patch_png_base64 } => {
+                let target_pos = resolve_click_target_position(
+                    &mut gui,
+                    &cancel,
+                    &mut last_smart_found,
+                    click_meta.as_ref(),
+                    patch_png_base64.as_deref(),
+                    pos,
+                )?;
+
+                if let Some((x, y)) = target_pos {
                     move_mouse_with_speed(
                         &mut gui,
                         &cancel,
@@ -346,6 +406,93 @@ fn move_mouse_with_speed(
 
     *current_pos = Some(target);
     Ok(())
+}
+
+fn resolve_click_target_position(
+    gui: &mut RustAutoGui,
+    cancel: &Arc<AtomicBool>,
+    last_smart_found: &mut Option<(i32, i32)>,
+    click_meta: Option<&ClickListMeta>,
+    patch_png_base64: Option<&str>,
+    pos: Option<(i32, i32)>,
+) -> anyhow::Result<Option<(i32, i32)>> {
+    let use_find_image = click_meta.map(|m| m.use_find_image).unwrap_or(false);
+    if !use_find_image {
+        return Ok(pos);
+    }
+
+    let Some(patch_b64) = patch_png_base64 else {
+        anyhow::bail!("Target click row is missing patch image data");
+    };
+
+    let precision = click_meta
+        .map(|m| m.target_precision)
+        .unwrap_or(CLICK_TARGET_DEFAULT_PRECISION)
+        .clamp(0.5, 1.0);
+    let timeout_ms = click_meta
+        .map(|m| m.target_timeout_ms)
+        .unwrap_or(CLICK_TARGET_DEFAULT_TIMEOUT_MS)
+        .clamp(200, 10000);
+
+    let found = find_target_position(
+        gui,
+        cancel,
+        last_smart_found,
+        patch_b64,
+        precision,
+        timeout_ms,
+        None,
+        pos.or(*last_smart_found).or(get_mouse_pos()),
+    )?;
+
+    Ok(Some(found))
+}
+
+fn find_target_position(
+    gui: &mut RustAutoGui,
+    cancel: &Arc<AtomicBool>,
+    last_smart_found: &mut Option<(i32, i32)>,
+    patch_png_base64: &str,
+    precision: f32,
+    timeout_ms: u64,
+    search_region_size: Option<u32>,
+    anchor_pos: Option<(i32, i32)>,
+) -> anyhow::Result<(i32, i32)> {
+    let patch_png = general_purpose::STANDARD
+        .decode(patch_png_base64)
+        .map_err(|e| anyhow::anyhow!("FindTarget decode failed: {e}"))?;
+
+    let region = match (search_region_size, anchor_pos) {
+        (Some(size), Some((x, y))) => {
+            let (sw, sh) = gui.get_screen_size();
+            compute_region_around_point(sw, sh, x, y, size)
+        }
+        _ => None,
+    };
+
+    gui.prepare_template_from_raw_encoded(&patch_png, region, MatchMode::FFT)?;
+
+    let started_at = Instant::now();
+    let timeout = Duration::from_millis(timeout_ms);
+
+    loop {
+        if cancel.load(Ordering::Relaxed) {
+            anyhow::bail!("Cancelled");
+        }
+        if started_at.elapsed() > timeout {
+            anyhow::bail!("FindTarget timed out ({} ms)", timeout_ms);
+        }
+
+        match gui.find_image_on_screen(precision)? {
+            Some(locations) if !locations.is_empty() => {
+                let (x, y, _corr) = locations[0];
+                let found = (x as i32, y as i32);
+                *last_smart_found = Some(found);
+                return Ok(found);
+            }
+            _ => std::thread::sleep(Duration::from_millis(50)),
+        }
+    }
 }
 
 fn compute_region_around_point(

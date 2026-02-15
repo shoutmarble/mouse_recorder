@@ -16,6 +16,8 @@ impl App {
             click_speed_ms: self.editor_click_speed_ms,
             mouse_move_speed_ms: self.editor_mouse_move_speed_ms,
             use_find_image: self.editor_use_find_image,
+            target_precision: self.editor_target_precision_percent as f32 / 100.0,
+            target_timeout_ms: self.editor_target_timeout_ms as u64,
         }
     }
 
@@ -67,6 +69,8 @@ impl App {
                 click_speed_ms: self.editor_click_speed_ms,
                 mouse_move_speed_ms: self.editor_mouse_move_speed_ms,
                 use_find_image: self.editor_use_find_image,
+                target_precision: self.editor_target_precision_percent as f32 / 100.0,
+                target_timeout_ms: self.editor_target_timeout_ms as u64,
             }),
         });
 
@@ -76,28 +80,10 @@ impl App {
     pub(super) fn event_kinds_from_editor_modes(&self, patch: Option<String>) -> Vec<RecordedEventKind> {
         let mut out = Vec::new();
 
-        if self.editor_use_find_image {
-            let Some(ref patch_png_base64) = patch else {
-                return out;
-            };
-
-            out.push(RecordedEventKind::FindTarget {
-                patch_png_base64: patch_png_base64.clone(),
-                patch_size: self.find_image_patch_size,
-                precision: self.find_image_precision,
-                timeout_ms: self.find_image_timeout_ms,
-                search_anchor: self.find_image_anchor,
-                search_region_size: self
-                    .find_image_limit_region
-                    .then_some(self.find_image_region_size),
-            });
-        }
-
-        let click_patch = if self.editor_use_find_image {
-            None
-        } else {
-            patch.clone()
-        };
+        // Keep click-row patch even in find-target mode so existing thumbnails
+        // and reference image data remain stable unless user explicitly captures
+        // a new patch via GET (X,Y).
+        let click_patch = patch.clone();
 
         if self.editor_left_mode == ClickEdgeMode::Auto
             && self.editor_right_mode == ClickEdgeMode::Auto

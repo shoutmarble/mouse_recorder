@@ -54,6 +54,14 @@ impl App {
                 self.editor_mouse_move_speed_ms = ms.clamp(0, 500);
                 Ok(Task::none())
             }
+            Message::EditorTargetPrecisionChanged(percent) => {
+                self.editor_target_precision_percent = percent.clamp(50, 100);
+                Ok(Task::none())
+            }
+            Message::EditorTargetTimeoutMsChanged(ms) => {
+                self.editor_target_timeout_ms = ms.clamp(200, 10000);
+                Ok(Task::none())
+            }
             Message::EditorUseFindImageToggled(enabled) => {
                 self.editor_use_find_image = enabled;
                 Ok(Task::none())
@@ -102,13 +110,15 @@ impl App {
                 };
 
                 let patch = if self.editor_use_find_image {
-                    self.editor_static_preview_patch_b64
-                        .clone()
-                        .or_else(|| capture_patch_png_base64(x, y, 128).ok())
+                    let Some(existing_patch) = self.editor_static_preview_patch_b64.clone() else {
+                        self.status = "Press GET (X,Y) to capture/select a target image first".to_string();
+                        return Ok(Task::none());
+                    };
+                    Some(existing_patch)
                 } else {
                     capture_patch_png_base64(x, y, 128).ok()
                 };
-                let mut kinds = self.event_kinds_from_editor_modes(patch);
+                let kinds = self.event_kinds_from_editor_modes(patch);
                 if kinds.is_empty() {
                     self.status = if self.editor_use_find_image {
                         "Capture GET target first".to_string()
@@ -121,6 +131,8 @@ impl App {
                 let click_meta = Some(self.current_click_list_meta());
 
                 if let Some(index) = self.selected_index {
+                    let selected_kind = self.events.get(index).map(|ev| ev.kind.clone());
+
                     if let Some(ev) = self.events.get(index).cloned() {
                         match ev.kind {
                             RecordedEventKind::Move { .. } => {
@@ -135,32 +147,40 @@ impl App {
                         }
                     }
 
+                    let replacement_kind = {
+                        let kind_matches_selected = |candidate: &RecordedEventKind| -> bool {
+                            match (selected_kind.as_ref(), candidate) {
+                                (Some(RecordedEventKind::LeftDown { .. }), RecordedEventKind::LeftDown { .. }) => true,
+                                (Some(RecordedEventKind::LeftUp { .. }), RecordedEventKind::LeftUp { .. }) => true,
+                                (Some(RecordedEventKind::LeftClick { .. }), RecordedEventKind::LeftClick { .. }) => true,
+                                (Some(RecordedEventKind::RightDown { .. }), RecordedEventKind::RightDown { .. }) => true,
+                                (Some(RecordedEventKind::RightUp { .. }), RecordedEventKind::RightUp { .. }) => true,
+                                (Some(RecordedEventKind::RightClick { .. }), RecordedEventKind::RightClick { .. }) => true,
+                                (Some(RecordedEventKind::MiddleDown { .. }), RecordedEventKind::MiddleDown { .. }) => true,
+                                (Some(RecordedEventKind::MiddleUp { .. }), RecordedEventKind::MiddleUp { .. }) => true,
+                                (Some(RecordedEventKind::MiddleClick { .. }), RecordedEventKind::MiddleClick { .. }) => true,
+                                _ => false,
+                            }
+                        };
+
+                        kinds
+                            .iter()
+                            .find(|k| kind_matches_selected(k))
+                            .cloned()
+                            .or_else(|| kinds.first().cloned())
+                    };
+
+                    let Some(replacement_kind) = replacement_kind else {
+                        self.status = "No compatible action to apply".to_string();
+                        return Ok(Task::none());
+                    };
+
                     if let Some(cur) = self.events.get_mut(index) {
-                        cur.kind = kinds.remove(0);
+                        cur.kind = replacement_kind;
                         cur.pos = Some((x, y));
                         cur.click_meta = click_meta.clone();
                     }
-
-                    let mut inserted = 0usize;
-                    let base_ms = self.events.get(index).map(|e| e.ms_from_start).unwrap_or(0);
-                    for (offset, kind) in kinds.into_iter().enumerate() {
-                        self.events.insert(
-                            index + 1 + offset,
-                            RecordedEvent {
-                                ms_from_start: base_ms + 1 + offset as u128,
-                                kind,
-                                pos: Some((x, y)),
-                                click_meta: click_meta.clone(),
-                            },
-                        );
-                        inserted += 1;
-                    }
-
-                    self.status = if inserted > 0 {
-                        format!("Updated selected row and inserted {} extra row(s)", inserted)
-                    } else {
-                        "Updated selected row".to_string()
-                    };
+                    self.status = "Updated selected row (single-row apply)".to_string();
                 } else {
                     let insert_at = self.events.len();
                     let prev_ms = self.events.last().map(|e| e.ms_from_start).unwrap_or(0);
@@ -196,9 +216,11 @@ impl App {
                 };
 
                 let patch = if self.editor_use_find_image {
-                    self.editor_static_preview_patch_b64
-                        .clone()
-                        .or_else(|| capture_patch_png_base64(x, y, 128).ok())
+                    let Some(existing_patch) = self.editor_static_preview_patch_b64.clone() else {
+                        self.status = "Press GET (X,Y) to capture/select a target image first".to_string();
+                        return Ok(Task::none());
+                    };
+                    Some(existing_patch)
                 } else {
                     capture_patch_png_base64(x, y, 128).ok()
                 };
@@ -231,7 +253,7 @@ impl App {
                 }
 
                 self.selected_index = Some(insert_at);
-                self.status = format!("Inserted {} row(s) below selected", inserted);
+                self.status = format!("Inserted {} row(s) below selected (multi-row)", inserted);
                 Ok(Task::none())
             }
             Message::SelectRow(index) => {
@@ -356,6 +378,9 @@ impl App {
                         self.editor_wait_ms = meta.wait_ms;
                         self.editor_click_speed_ms = meta.click_speed_ms.min(100);
                         self.editor_mouse_move_speed_ms = meta.mouse_move_speed_ms.min(500);
+                        self.editor_target_precision_percent =
+                            (meta.target_precision.clamp(0.5, 1.0) * 100.0).round() as u16;
+                        self.editor_target_timeout_ms = meta.target_timeout_ms.clamp(200, 10000) as u16;
                         self.selected_wait_ms_text = meta.wait_ms.to_string();
                         self.editor_use_find_image = meta.use_find_image;
                     }
@@ -385,7 +410,33 @@ impl App {
                 Ok(Task::none())
             }
             Message::ClearSelection => {
-                self.selected_index = None;
+                if self.mode != Mode::Idle {
+                    self.status = "Stop recording/playback first".to_string();
+                    return Ok(Task::none());
+                }
+
+                let Some(index) = self.selected_index else {
+                    self.status = "Select a row first to delete".to_string();
+                    return Ok(Task::none());
+                };
+
+                if index >= self.events.len() {
+                    self.selected_index = None;
+                    self.status = "Selected row no longer exists".to_string();
+                    return Ok(Task::none());
+                }
+
+                self.events.remove(index);
+
+                if self.events.is_empty() {
+                    self.selected_index = None;
+                } else {
+                    let next_index = index.min(self.events.len() - 1);
+                    self.selected_index = Some(next_index);
+                    return Ok(self.update(Message::SelectRow(next_index)));
+                }
+
+                self.status = format!("Deleted row {}", index);
                 Ok(Task::none())
             }
             _ => Err(message),

@@ -85,7 +85,7 @@ impl App {
         let right_preview_border = if self.editor_capture_armed {
             Color::from_rgb8(0xe5, 0x39, 0x35)
         } else {
-            Color::from_rgb8(0x00, 0x8f, 0xd5)
+            Color::from_rgb8(0x76, 0x85, 0x96)
         };
 
         let fmt_xy = |pos: Option<(i32, i32)>| -> String {
@@ -94,8 +94,6 @@ impl App {
                 None => "(     ?,      ?)".to_string(),
             }
         };
-
-        let live_xy_text = fmt_xy(self.current_pos);
 
         let grabbed_xy_text = fmt_xy(match (
             self.editor_x_text.trim().parse::<i32>().ok(),
@@ -159,6 +157,160 @@ impl App {
             .into()
         };
 
+        let target_match_box = || -> Element<Message> {
+            let precision_value = self.editor_target_precision_percent as f32 / 100.0;
+
+            iced::widget::column![
+                text("Image match").size(12),
+                container(
+                    iced::widget::column![
+                        tooltip(
+                            text("Precision").size(12),
+                            "Match confidence threshold (higher = stricter, fewer false positives)",
+                            TooltipPosition::Top,
+                        )
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| iced::widget::container::Style {
+                            text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
+                            background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
+                            border: Border {
+                                color: Color::from_rgb8(0x68, 0x9d, 0xff),
+                                width: 1.0,
+                                radius: 8.0.into(),
+                            },
+                            shadow: Shadow::default(),
+                            snap: false,
+                        }),
+                        row![
+                            tooltip(
+                                slider(
+                                    50..=100,
+                                    self.editor_target_precision_percent,
+                                    Message::EditorTargetPrecisionChanged,
+                                )
+                                .width(Length::Fixed(140.0)),
+                                text(format!("Precision: {precision_value:.2}")),
+                                TooltipPosition::Top,
+                            )
+                            .gap(6)
+                            .padding(8)
+                            .style(|_| iced::widget::container::Style {
+                                text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
+                                background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
+                                border: Border {
+                                    color: Color::from_rgb8(0x68, 0x9d, 0xff),
+                                    width: 1.0,
+                                    radius: 8.0.into(),
+                                },
+                                shadow: Shadow::default(),
+                                snap: false,
+                            }),
+                            text(format!("{precision_value:.2}")).size(12),
+                        ]
+                        .spacing(6)
+                        .align_y(alignment::Alignment::Center),
+                    ]
+                    .spacing(6),
+                )
+                .padding(8)
+                .style(|_| iced::widget::container::Style {
+                    text_color: None,
+                    background: Some(Background::Color(Color::from_rgb8(0x1a, 0x1f, 0x26))),
+                    border: Border {
+                        color: Color::from_rgb8(0x76, 0x85, 0x96),
+                        width: 1.0,
+                        radius: 8.0.into(),
+                    },
+                    shadow: Shadow::default(),
+                    snap: false,
+                }),
+                container(
+                    iced::widget::column![
+                        tooltip(
+                            text("Timeout").size(12),
+                            "How long to search before failing this target click",
+                            TooltipPosition::Top,
+                        )
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| iced::widget::container::Style {
+                            text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
+                            background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
+                            border: Border {
+                                color: Color::from_rgb8(0x68, 0x9d, 0xff),
+                                width: 1.0,
+                                radius: 8.0.into(),
+                            },
+                            shadow: Shadow::default(),
+                            snap: false,
+                        }),
+                        row![
+                            tooltip(
+                                slider(
+                                    200..=10000,
+                                    self.editor_target_timeout_ms,
+                                    Message::EditorTargetTimeoutMsChanged,
+                                )
+                                .width(Length::Fixed(140.0)),
+                                text(format!("Timeout: {} ms", self.editor_target_timeout_ms)),
+                                TooltipPosition::Top,
+                            )
+                            .gap(6)
+                            .padding(8)
+                            .style(|_| iced::widget::container::Style {
+                                text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
+                                background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
+                                border: Border {
+                                    color: Color::from_rgb8(0x68, 0x9d, 0xff),
+                                    width: 1.0,
+                                    radius: 8.0.into(),
+                                },
+                                shadow: Shadow::default(),
+                                snap: false,
+                            }),
+                            text(format!("{} ms", self.editor_target_timeout_ms)).size(12),
+                        ]
+                        .spacing(6)
+                        .align_y(alignment::Alignment::Center),
+                    ]
+                    .spacing(6),
+                )
+                .padding(8)
+                .style(|_| iced::widget::container::Style {
+                    text_color: None,
+                    background: Some(Background::Color(Color::from_rgb8(0x1a, 0x1f, 0x26))),
+                    border: Border {
+                        color: Color::from_rgb8(0x76, 0x85, 0x96),
+                        width: 1.0,
+                        radius: 8.0.into(),
+                    },
+                    shadow: Shadow::default(),
+                    snap: false,
+                }),
+            ]
+            .spacing(8)
+            .align_x(alignment::Alignment::Start)
+            .into()
+        };
+
+        fn preview_column_frame<'a>(content: Element<'a, Message>) -> Element<'a, Message> {
+            container(content)
+                .padding(8)
+                .style(|_| iced::widget::container::Style {
+                    text_color: None,
+                    background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+                    border: Border {
+                        color: Color::from_rgb8(0x76, 0x85, 0x96),
+                        width: 1.0,
+                        radius: 8.0.into(),
+                    },
+                    shadow: Shadow::default(),
+                    snap: false,
+                })
+                .into()
+        }
+
         let static_preview: Element<Message> = if let Some(b64) = self.editor_static_preview_patch_b64.as_deref() {
             if let Some(handle) = self.preview_handle_from_base64(b64) {
                 container(
@@ -167,53 +319,59 @@ impl App {
                             .height(Length::Fixed(PREVIEW_TITLE_H))
                             .align_y(alignment::Vertical::Center),
                         row![
-                            iced::widget::column![
-                                container(
+                            preview_column_frame(
+                                iced::widget::column![
                                     container(
-                                        image(handle)
-                                            .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
-                                            .height(Length::Fixed(PREVIEW_IMAGE_SIZE)),
+                                        container(
+                                            image(handle)
+                                                .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                                .height(Length::Fixed(PREVIEW_IMAGE_SIZE)),
+                                        )
+                                        .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                        .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                        .style(|_| iced::widget::container::Style {
+                                            text_color: None,
+                                            background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                            border: Border {
+                                                color: Color::TRANSPARENT,
+                                                width: 0.0,
+                                                radius: PREVIEW_INNER_RADIUS.into(),
+                                            },
+                                            shadow: Shadow::default(),
+                                            snap: false,
+                                        }),
                                     )
-                                    .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
-                                    .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
-                                    .style(|_| iced::widget::container::Style {
+                                    .padding(PREVIEW_FRAME_PADDING)
+                                    .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                    .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                    .style(move |_| iced::widget::container::Style {
                                         text_color: None,
                                         background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
                                         border: Border {
-                                            color: Color::TRANSPARENT,
-                                            width: 0.0,
-                                            radius: PREVIEW_INNER_RADIUS.into(),
+                                            color: right_preview_border,
+                                            width: 2.0,
+                                            radius: PREVIEW_FRAME_RADIUS.into(),
                                         },
                                         shadow: Shadow::default(),
                                         snap: false,
                                     }),
-                                )
-                                .padding(PREVIEW_FRAME_PADDING)
-                                .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
-                                .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
-                                .style(move |_| iced::widget::container::Style {
-                                    text_color: None,
-                                    background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
-                                    border: Border {
-                                        color: right_preview_border,
-                                        width: 2.0,
-                                        radius: PREVIEW_FRAME_RADIUS.into(),
-                                    },
-                                    shadow: Shadow::default(),
-                                    snap: false,
-                                }),
-                                text(format!("GET:  {grabbed_xy_text}")).size(12),
-                                text(format!("LIVE: {live_xy_text}")).size(12),
-                            ]
-                            .spacing(4),
-                            iced::widget::column![
-                                text(capture_status_text).size(12).color(capture_status_color),
-                                button(text("GET (X,Y)"))
-                                    .on_press(Message::EditorStartGetXY),
-                                target_mode_box(),
-                            ]
-                            .spacing(10)
-                            .align_x(alignment::Alignment::Start),
+                                    text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                ]
+                                .spacing(4)
+                                .into(),
+                            ),
+                            preview_column_frame(
+                                iced::widget::column![
+                                    text(capture_status_text).size(12).color(capture_status_color),
+                                    button(text("GET (X,Y)"))
+                                        .on_press(Message::EditorStartGetXY),
+                                    target_mode_box(),
+                                ]
+                                .spacing(10)
+                                .align_x(alignment::Alignment::Start)
+                                .into(),
+                            ),
+                            preview_column_frame(target_match_box()),
                         ]
                         .spacing(16)
                         .align_y(alignment::Alignment::Start)
@@ -230,20 +388,26 @@ impl App {
                             .height(Length::Fixed(PREVIEW_TITLE_H))
                             .align_y(alignment::Vertical::Center),
                         row![
-                            iced::widget::column![
-                                text("(static preview failed)").size(12),
-                                text(format!("GET:  {grabbed_xy_text}")).size(12),
-                                text(format!("LIVE: {live_xy_text}")).size(12),
-                            ]
-                            .spacing(4),
-                            iced::widget::column![
-                                text(capture_status_text).size(12).color(capture_status_color),
-                                button(text("GET (X,Y)"))
-                                    .on_press(Message::EditorStartGetXY),
-                                target_mode_box(),
-                            ]
-                            .spacing(10)
-                            .align_x(alignment::Alignment::Start),
+                            preview_column_frame(
+                                iced::widget::column![
+                                    text("(static preview failed)").size(12),
+                                    text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                ]
+                                .spacing(4)
+                                .into(),
+                            ),
+                            preview_column_frame(
+                                iced::widget::column![
+                                    text(capture_status_text).size(12).color(capture_status_color),
+                                    button(text("GET (X,Y)"))
+                                        .on_press(Message::EditorStartGetXY),
+                                    target_mode_box(),
+                                ]
+                                .spacing(10)
+                                .align_x(alignment::Alignment::Start)
+                                .into(),
+                            ),
+                            preview_column_frame(target_match_box()),
                         ]
                         .spacing(16)
                         .align_y(alignment::Alignment::Start)
@@ -261,51 +425,57 @@ impl App {
                         .height(Length::Fixed(PREVIEW_TITLE_H))
                         .align_y(alignment::Vertical::Center),
                     row![
-                        iced::widget::column![
-                            container(
-                                container(text("128 px x 128 px").size(14))
-                                    .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
-                                    .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
-                                    .align_x(alignment::Horizontal::Center)
-                                    .align_y(alignment::Vertical::Center)
-                                    .style(|_| iced::widget::container::Style {
-                                        text_color: None,
-                                        background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
-                                        border: Border {
-                                            color: Color::TRANSPARENT,
-                                            width: 0.0,
-                                            radius: PREVIEW_INNER_RADIUS.into(),
-                                        },
-                                        shadow: Shadow::default(),
-                                        snap: false,
-                                    }),
-                            )
-                            .padding(PREVIEW_FRAME_PADDING)
-                            .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
-                            .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
-                            .style(move |_| iced::widget::container::Style {
-                                text_color: None,
-                                background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
-                                border: Border {
-                                    color: right_preview_border,
-                                    width: 2.0,
-                                    radius: PREVIEW_FRAME_RADIUS.into(),
-                                },
-                                shadow: Shadow::default(),
-                                snap: false,
-                            }),
-                            text(format!("GET:  {grabbed_xy_text}")).size(12),
-                            text(format!("LIVE: {live_xy_text}")).size(12),
-                        ]
-                        .spacing(4),
-                        iced::widget::column![
-                            text(capture_status_text).size(12).color(capture_status_color),
-                            button(text("GET (X,Y)"))
-                                .on_press(Message::EditorStartGetXY),
-                            target_mode_box(),
-                        ]
-                        .spacing(10)
-                        .align_x(alignment::Alignment::Start),
+                        preview_column_frame(
+                            iced::widget::column![
+                                container(
+                                    container(text("128 px x 128 px").size(14))
+                                        .width(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                        .height(Length::Fixed(PREVIEW_IMAGE_SIZE))
+                                        .align_x(alignment::Horizontal::Center)
+                                        .align_y(alignment::Vertical::Center)
+                                        .style(|_| iced::widget::container::Style {
+                                            text_color: None,
+                                            background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                            border: Border {
+                                                color: Color::TRANSPARENT,
+                                                width: 0.0,
+                                                radius: PREVIEW_INNER_RADIUS.into(),
+                                            },
+                                            shadow: Shadow::default(),
+                                            snap: false,
+                                        }),
+                                )
+                                .padding(PREVIEW_FRAME_PADDING)
+                                .width(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                .height(Length::Fixed(PREVIEW_FRAMED_SIZE))
+                                .style(move |_| iced::widget::container::Style {
+                                    text_color: None,
+                                    background: Some(Background::Color(Color::from_rgb8(0x18, 0x1b, 0x1f))),
+                                    border: Border {
+                                        color: right_preview_border,
+                                        width: 2.0,
+                                        radius: PREVIEW_FRAME_RADIUS.into(),
+                                    },
+                                    shadow: Shadow::default(),
+                                    snap: false,
+                                }),
+                                text(format!("GET:  {grabbed_xy_text}")).size(12),
+                            ]
+                            .spacing(4)
+                            .into(),
+                        ),
+                        preview_column_frame(
+                            iced::widget::column![
+                                text(capture_status_text).size(12).color(capture_status_color),
+                                button(text("GET (X,Y)"))
+                                    .on_press(Message::EditorStartGetXY),
+                                target_mode_box(),
+                            ]
+                            .spacing(10)
+                            .align_x(alignment::Alignment::Start)
+                            .into(),
+                        ),
+                        preview_column_frame(target_match_box()),
                     ]
                     .spacing(16)
                     .align_y(alignment::Alignment::Start)
@@ -323,7 +493,7 @@ impl App {
                 text_color: None,
                 background: Some(Background::Color(Color::from_rgb8(0x1b, 0x1f, 0x26))),
                 border: Border {
-                    color: Color::from_rgb8(0x4a, 0x81, 0xb0),
+                    color: Color::from_rgb8(0x76, 0x85, 0x96),
                     width: 1.0,
                     radius: 8.0.into(),
                 },
@@ -491,7 +661,7 @@ impl App {
         if self.selected_index.is_some() {
             button_items.push(
                 container(
-                    button(text("INSERT BELOW SELECTED"))
+                    button(text("CLONE NEW CLICK"))
                         .style(iced::widget::button::secondary)
                         .on_press(Message::EditorInsertBelowSelected),
                 )
@@ -576,7 +746,7 @@ impl App {
         let title_row = row![
             text("Properties").size(16),
             container(iced::widget::Space::new()).width(Length::Fill),
-            button(text("Clear")).on_press(Message::ClearSelection),
+            button(text("Delete")).on_press(Message::ClearSelection),
         ]
         .spacing(8)
         .align_y(alignment::Alignment::Center);

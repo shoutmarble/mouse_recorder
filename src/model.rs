@@ -125,6 +125,8 @@ pub struct ClickListMeta {
     pub click_speed_ms: u16,
     pub mouse_move_speed_ms: u16,
     pub use_find_image: bool,
+    pub target_precision: f32,
+    pub target_timeout_ms: u64,
 }
 
 impl Default for ClickListMeta {
@@ -137,6 +139,8 @@ impl Default for ClickListMeta {
             click_speed_ms: 20,
             mouse_move_speed_ms: 150,
             use_find_image: false,
+            target_precision: 0.90,
+            target_timeout_ms: 2000,
         }
     }
 }

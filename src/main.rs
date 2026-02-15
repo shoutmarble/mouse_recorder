@@ -39,7 +39,7 @@ fn main() -> iced::Result {
         .scale_factor(App::ui_scale_factor)
         .window(iced::window::Settings {
             // Roughly: 1/2 width and 2/3 height of a typical 1024x768 default.
-            size: iced::Size::new(840.0, 612.0),
+            size: iced::Size::new(1040.0, 912.0),
             ..Default::default()
         })
         .subscription(App::subscription)
@@ -63,12 +63,6 @@ struct App {
     recorder_wait_ms: u64,
 
     find_image_patch_size: u32,
-    find_image_precision: f32,
-    find_image_timeout_ms: u64,
-
-    find_image_anchor: SearchAnchor,
-
-    find_image_limit_region: bool,
     find_image_region_size: u32,
 
     find_target_modal: Option<FindTargetDraft>,
@@ -79,6 +73,8 @@ struct App {
     editor_wait_ms: u16,
     editor_click_speed_ms: u16,
     editor_mouse_move_speed_ms: u16,
+    editor_target_precision_percent: u16,
+    editor_target_timeout_ms: u16,
     editor_click_target: ClickTarget,
     editor_left_mode: ClickEdgeMode,
     editor_right_mode: ClickEdgeMode,
@@ -127,12 +123,6 @@ impl Default for App {
             recorder_wait_ms: 10,
 
             find_image_patch_size: 64,
-            find_image_precision: 0.92,
-            find_image_timeout_ms: 2000,
-
-            find_image_anchor: SearchAnchor::RecordedClick,
-
-            find_image_limit_region: true,
             find_image_region_size: 600,
 
             find_target_modal: None,
@@ -143,6 +133,8 @@ impl Default for App {
             editor_wait_ms: 20,
             editor_click_speed_ms: 20,
             editor_mouse_move_speed_ms: 150,
+            editor_target_precision_percent: 90,
+            editor_target_timeout_ms: 2000,
             editor_click_target: ClickTarget::Left,
             editor_left_mode: ClickEdgeMode::Auto,
             editor_right_mode: ClickEdgeMode::Auto,
