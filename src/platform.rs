@@ -47,6 +47,24 @@ pub fn get_mouse_pos() -> Option<(i32, i32)> {
 }
 
 #[cfg(windows)]
+pub fn jump_mouse_to(x: i32, y: i32) -> Result<(), String> {
+    use windows::Win32::UI::WindowsAndMessaging::SetCursorPos;
+
+    unsafe {
+        if SetCursorPos(x, y).is_ok() {
+            Ok(())
+        } else {
+            Err("SetCursorPos failed".to_string())
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub fn jump_mouse_to(_x: i32, _y: i32) -> Result<(), String> {
+    Err("Jump is currently Windows-only".to_string())
+}
+
+#[cfg(windows)]
 pub const VK_LBUTTON: i32 = 0x01;
 #[cfg(windows)]
 pub const VK_RBUTTON: i32 = 0x02;

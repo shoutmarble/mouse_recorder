@@ -54,6 +54,18 @@ impl App {
                 self.editor_mouse_move_speed_ms = ms.clamp(0, 500);
                 Ok(Task::none())
             }
+            Message::MousePathMinDeltaPxChanged(px) => {
+                self.recorder_mouse_path_min_delta_px = px.clamp(0, 20);
+                Ok(Task::none())
+            }
+            Message::EditorClickSplitPxChanged(px) => {
+                self.editor_click_split_px = px.clamp(0, 20);
+                Ok(Task::none())
+            }
+            Message::EditorClickMaxHoldMsChanged(ms) => {
+                self.editor_click_max_hold_ms = ms.clamp(0, 100);
+                Ok(Task::none())
+            }
             Message::EditorTargetPrecisionChanged(percent) => {
                 self.editor_target_precision_percent = percent.clamp(50, 100);
                 Ok(Task::none())
@@ -94,6 +106,28 @@ impl App {
                 #[cfg(not(windows))]
                 {
                     self.status = "GET (X,Y) capture is Windows-only right now".to_string();
+                }
+
+                Ok(Task::none())
+            }
+            Message::EditorJumpToXY => {
+                if self.mode != Mode::Idle {
+                    self.status = "Stop recording/playback first".to_string();
+                    return Ok(Task::none());
+                }
+
+                let Some((x, y)) = self.parse_editor_xy() else {
+                    self.status = "Invalid X/Y for jump".to_string();
+                    return Ok(Task::none());
+                };
+
+                match jump_mouse_to(x, y) {
+                    Ok(()) => {
+                        self.status = format!("Jumped mouse to ({x}, {y})");
+                    }
+                    Err(err) => {
+                        self.status = format!("Jump failed: {err}");
+                    }
                 }
 
                 Ok(Task::none())
@@ -141,6 +175,20 @@ impl App {
                                     cur.pos = Some((x, y));
                                 }
                                 self.status = format!("Updated move at row {}", index);
+                                return Ok(Task::none());
+                            }
+                            RecordedEventKind::Moves { mut points } => {
+                                if let Some(last) = points.last_mut() {
+                                    *last = (x, y);
+                                } else {
+                                    points.push((x, y));
+                                }
+
+                                if let Some(cur) = self.events.get_mut(index) {
+                                    cur.kind = RecordedEventKind::Moves { points };
+                                    cur.pos = Some((x, y));
+                                }
+                                self.status = format!("Updated moves at row {}", index);
                                 return Ok(Task::none());
                             }
                             _ => {}
@@ -277,9 +325,19 @@ impl App {
                         _ => None,
                     };
 
-                    if let Some((x, y)) = ev.pos {
-                        self.editor_x_text = x.to_string();
-                        self.editor_y_text = y.to_string();
+                    match &ev.kind {
+                        RecordedEventKind::Moves { points } => {
+                            if let Some((x, y)) = points.last().copied().or(ev.pos) {
+                                self.editor_x_text = x.to_string();
+                                self.editor_y_text = y.to_string();
+                            }
+                        }
+                        _ => {
+                            if let Some((x, y)) = ev.pos {
+                                self.editor_x_text = x.to_string();
+                                self.editor_y_text = y.to_string();
+                            }
+                        }
                     }
 
                     self.editor_static_preview_patch_b64 = event_patch_b64;

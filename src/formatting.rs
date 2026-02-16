@@ -20,7 +20,7 @@ pub(crate) fn format_event_with_prev(
     };
 
     let mode_tag = |mode: ClickEdgeMode| match mode {
-        ClickEdgeMode::Auto => "AUTO",
+        ClickEdgeMode::Auto => "CLICK",
         ClickEdgeMode::Down => "DOWN",
         ClickEdgeMode::Up => "UP",
         ClickEdgeMode::Double => "DOUBLE",
@@ -47,6 +47,14 @@ pub(crate) fn format_event_with_prev(
                 "MOVE|(X,Y)".to_string(),
                 wait_value(ev.click_meta.as_ref()),
                 Some((*x, *y)),
+            )
+        }
+        RecordedEventKind::Moves { points } => {
+            let last = points.last().copied().or(prev_pos);
+            (
+                "MOVES|(X,Y)".to_string(),
+                format!("{} pts | {}", points.len(), wait_value(ev.click_meta.as_ref())),
+                last,
             )
         }
         RecordedEventKind::Wait { ms } => (

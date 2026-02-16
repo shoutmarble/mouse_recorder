@@ -16,6 +16,12 @@ impl App {
                 };
                 Ok(Task::none())
             }
+            Message::WindowResized(_w, h) => {
+                if h.is_finite() {
+                    self.window_height_px = h.max(240.0);
+                }
+                Ok(Task::none())
+            }
             Message::StartRecording => {
                 if self.mode == Mode::Playing {
                     return Ok(Task::none());
@@ -30,9 +36,18 @@ impl App {
                     state.left_down = false;
                     state.right_down = false;
                     state.middle_down = false;
+                    state.left_down_pos = None;
+                    state.right_down_pos = None;
+                    state.middle_down_pos = None;
+                    state.left_down_at = None;
+                    state.right_down_at = None;
+                    state.middle_down_at = None;
                     state.started_by_click = false;
                     state.last_click_pos = None;
                     state.synthetic_time_ms = 0;
+                    state.left_pending_click = None;
+                    state.right_pending_click = None;
+                    state.middle_pending_click = None;
 
                     if let Some((x, y)) = get_mouse_pos() {
                         state.last_x = x;
@@ -54,12 +69,15 @@ impl App {
                     self.mode = Mode::Idle;
                     self.status = "Playback stopped.".to_string();
                 } else if self.mode == Mode::Recording {
-                    self.mode = Mode::Idle;
-                    self.status = format!("Stopped. {} events recorded.", self.events.len());
-
+                    let mut pushed = Vec::new();
                     if let Ok(mut state) = self.recorder_state.lock() {
+                        self.flush_all_pending_clicks(&mut state, &mut pushed);
                         state.enabled = false;
                     }
+
+                    self.append_recorded_events_compacting_moves(pushed);
+                    self.mode = Mode::Idle;
+                    self.status = format!("Stopped. {} events recorded.", self.events.len());
                 }
 
                 Ok(Task::none())
@@ -106,6 +124,15 @@ impl App {
                 self.status = "Cleared".to_string();
                 Ok(Task::none())
             }
+            Message::SetMousePathEnabled(enabled) => {
+                self.recorder_mouse_path_enabled = enabled;
+                self.status = if self.recorder_mouse_path_enabled {
+                    "Mouse path recording: ON".to_string()
+                } else {
+                    "Mouse path recording: OFF".to_string()
+                };
+                Ok(Task::none())
+            }
             Message::Tick => {
                 if self.mode != Mode::Recording {
                     return Ok(Task::none());
@@ -117,9 +144,12 @@ impl App {
                         return Ok(Task::none());
                     }
 
+                    self.flush_expired_pending_clicks(&mut state, &mut pushed);
+
+                    let previous_pos = (state.last_x, state.last_y);
+                    let mut current_pos = previous_pos;
                     if let Some((x, y)) = get_mouse_pos() {
-                        state.last_x = x;
-                        state.last_y = y;
+                        current_pos = (x, y);
                     }
 
                     #[cfg(windows)]
@@ -130,46 +160,162 @@ impl App {
 
                         if left_now && !state.left_down {
                             state.left_down = true;
+                            state.left_down_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            state.left_down_at = Some(Instant::now());
+                            if self.recorder_mouse_path_enabled {
+                                let down_pos = state.left_down_pos;
+                                self.push_recorded_button_down_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    MouseButton::Left,
+                                );
+                            }
                         } else if !left_now && state.left_down {
                             state.left_down = false;
-                            let pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
-                            self.push_recorded_button_release(
-                                &mut state,
-                                &mut pushed,
-                                pos,
-                                MouseButton::Left,
-                            );
+                            let down_pos = state.left_down_pos.take().or(Some((state.last_x, state.last_y)));
+                            let up_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            let held_ms = state
+                                .left_down_at
+                                .take()
+                                .map(|t| t.elapsed().as_millis() as u64)
+                                .unwrap_or(0);
+                            if self.recorder_mouse_path_enabled {
+                                self.push_recorded_button_up_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    up_pos,
+                                    MouseButton::Left,
+                                );
+                            } else {
+                                self.push_recorded_button_release(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    up_pos,
+                                    held_ms,
+                                    MouseButton::Left,
+                                );
+                            }
                         }
 
                         if right_now && !state.right_down {
                             state.right_down = true;
+                            state.right_down_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            state.right_down_at = Some(Instant::now());
+                            if self.recorder_mouse_path_enabled {
+                                let down_pos = state.right_down_pos;
+                                self.push_recorded_button_down_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    MouseButton::Right,
+                                );
+                            }
                         } else if !right_now && state.right_down {
                             state.right_down = false;
-                            let pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
-                            self.push_recorded_button_release(
-                                &mut state,
-                                &mut pushed,
-                                pos,
-                                MouseButton::Right,
-                            );
+                            let down_pos = state.right_down_pos.take().or(Some((state.last_x, state.last_y)));
+                            let up_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            let held_ms = state
+                                .right_down_at
+                                .take()
+                                .map(|t| t.elapsed().as_millis() as u64)
+                                .unwrap_or(0);
+                            if self.recorder_mouse_path_enabled {
+                                self.push_recorded_button_up_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    up_pos,
+                                    MouseButton::Right,
+                                );
+                            } else {
+                                self.push_recorded_button_release(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    up_pos,
+                                    held_ms,
+                                    MouseButton::Right,
+                                );
+                            }
                         }
 
                         if middle_now && !state.middle_down {
                             state.middle_down = true;
+                            state.middle_down_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            state.middle_down_at = Some(Instant::now());
+                            if self.recorder_mouse_path_enabled {
+                                let down_pos = state.middle_down_pos;
+                                self.push_recorded_button_down_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    MouseButton::Middle,
+                                );
+                            }
                         } else if !middle_now && state.middle_down {
                             state.middle_down = false;
-                            let pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
-                            self.push_recorded_button_release(
-                                &mut state,
-                                &mut pushed,
-                                pos,
-                                MouseButton::Middle,
-                            );
+                            let down_pos = state.middle_down_pos.take().or(Some((state.last_x, state.last_y)));
+                            let up_pos = get_mouse_pos().or(Some((state.last_x, state.last_y)));
+                            let held_ms = state
+                                .middle_down_at
+                                .take()
+                                .map(|t| t.elapsed().as_millis() as u64)
+                                .unwrap_or(0);
+                            if self.recorder_mouse_path_enabled {
+                                self.push_recorded_button_up_for_path(
+                                    &mut state,
+                                    &mut pushed,
+                                    up_pos,
+                                    MouseButton::Middle,
+                                );
+                            } else {
+                                self.push_recorded_button_release(
+                                    &mut state,
+                                    &mut pushed,
+                                    down_pos,
+                                    up_pos,
+                                    held_ms,
+                                    MouseButton::Middle,
+                                );
+                            }
                         }
                     }
+
+                    if self.recorder_mouse_path_enabled {
+                        let dx = (current_pos.0 - previous_pos.0).abs();
+                        let dy = (current_pos.1 - previous_pos.1).abs();
+                        let min_delta = self.recorder_mouse_path_min_delta_px as i32;
+
+                        if dx >= min_delta || dy >= min_delta {
+                            state.synthetic_time_ms = state.synthetic_time_ms.saturating_add(1);
+                            pushed.push(RecordedEvent {
+                                ms_from_start: state.synthetic_time_ms,
+                                kind: RecordedEventKind::Move {
+                                    x: current_pos.0,
+                                    y: current_pos.1,
+                                },
+                                pos: Some(current_pos),
+                                click_meta: None,
+                            });
+                        }
+                    }
+
+                    state.last_x = current_pos.0;
+                    state.last_y = current_pos.1;
+
+                    self.flush_expired_pending_clicks(&mut state, &mut pushed);
                 }
 
-                self.events.extend(pushed);
+                let changed = self.append_recorded_events_compacting_moves(pushed);
+
+                if changed {
+                    return Ok(iced::widget::operation::snap_to(
+                        self.events_scroll_id.clone(),
+                        iced::widget::operation::RelativeOffset { x: 0.0, y: 1.0 },
+                    ));
+                }
+
                 Ok(Task::none())
             }
             Message::PosTick => {
@@ -191,10 +337,7 @@ impl App {
                         if new_active != self.playback_active_index {
                             self.playback_active_index = new_active;
                             if let Some(i) = new_active {
-                                let should_snap = match self.playback_last_scrolled_index {
-                                    None => true,
-                                    Some(prev) => i.abs_diff(prev) >= 3,
-                                };
+                                let should_snap = self.playback_last_scrolled_index != Some(i);
 
                                 if should_snap {
                                     self.playback_last_scrolled_index = Some(i);
@@ -287,8 +430,17 @@ impl App {
                     let len = self.events.len();
                     if len > 0 {
                         let clamped = active_index.min(len.saturating_sub(1));
-                        let normalized = (clamped as f32 + 0.5) / len as f32;
-                        let y = (normalized - 0.35).clamp(0.0, 1.0);
+                        let visible_rows = self.estimated_visible_event_rows();
+
+                        let y = if len <= visible_rows {
+                            0.0
+                        } else {
+                            let half = visible_rows / 2;
+                            let max_top = len.saturating_sub(visible_rows);
+                            let top_index = clamped.saturating_sub(half).min(max_top);
+                            top_index as f32 / max_top as f32
+                        };
+
                         return Ok(iced::widget::operation::snap_to(
                             self.events_scroll_id.clone(),
                             iced::widget::operation::RelativeOffset { x: 0.0, y },
@@ -308,8 +460,9 @@ impl App {
                     self.status = "Provide a file path".to_string();
                     return Ok(Task::none());
                 }
-                let events = self.events.clone();
-                self.status = format!("Saving to {path}...");
+                let events = self.materialize_moves_grouped_events();
+
+                self.status = format!("Saving to {path} (materializing MOVES from MOVE samples)...");
                 Ok(Task::perform(
                     async move {
                         save_events_to_file(&path, &events).map(FileOpResult::Saved)

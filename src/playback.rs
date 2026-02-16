@@ -4,9 +4,6 @@ use base64::engine::general_purpose;
 use base64::Engine;
 use rustautogui::{MatchMode, MouseClick, RustAutoGui};
 
-const CLICK_TARGET_DEFAULT_PRECISION: f32 = 0.90;
-const CLICK_TARGET_DEFAULT_TIMEOUT_MS: u64 = 2000;
-
 pub(crate) fn playback(
     events: Vec<RecordedEvent>,
     cancel: Arc<AtomicBool>,
@@ -105,6 +102,17 @@ pub(crate) fn playback(
                     (x, y),
                     mouse_move_speed_ms,
                 )?;
+            }
+            RecordedEventKind::Moves { points } => {
+                for (x, y) in points {
+                    move_mouse_with_speed(
+                        &mut gui,
+                        &cancel,
+                        &mut current_pos,
+                        (x, y),
+                        mouse_move_speed_ms,
+                    )?;
+                }
             }
             RecordedEventKind::Wait { ms } => {
                 sleep_with_cancel(&cancel, ms)?;
@@ -416,7 +424,11 @@ fn resolve_click_target_position(
     patch_png_base64: Option<&str>,
     pos: Option<(i32, i32)>,
 ) -> anyhow::Result<Option<(i32, i32)>> {
-    let use_find_image = click_meta.map(|m| m.use_find_image).unwrap_or(false);
+    let Some(meta) = click_meta else {
+        anyhow::bail!("Click row is missing click metadata");
+    };
+
+    let use_find_image = meta.use_find_image;
     if !use_find_image {
         return Ok(pos);
     }
@@ -425,14 +437,8 @@ fn resolve_click_target_position(
         anyhow::bail!("Target click row is missing patch image data");
     };
 
-    let precision = click_meta
-        .map(|m| m.target_precision)
-        .unwrap_or(CLICK_TARGET_DEFAULT_PRECISION)
-        .clamp(0.5, 1.0);
-    let timeout_ms = click_meta
-        .map(|m| m.target_timeout_ms)
-        .unwrap_or(CLICK_TARGET_DEFAULT_TIMEOUT_MS)
-        .clamp(200, 10000);
+    let precision = meta.target_precision.clamp(0.5, 1.0);
+    let timeout_ms = meta.target_timeout_ms.clamp(200, 10000);
 
     let found = find_target_position(
         gui,

@@ -1,6 +1,6 @@
 use iced::widget::{
     button, checkbox, column, container, image, mouse_area, pick_list, radio, row, scrollable, stack, text,
-    slider, svg, text_input, tooltip,
+    slider, svg, text_input, toggler, tooltip,
 };
 use iced::widget::tooltip::Position as TooltipPosition;
 use iced::{alignment, Background, Border, Color, Element, Length, Shadow, Subscription, Task};
@@ -28,7 +28,7 @@ use formatting::format_event_with_prev;
 use playback::playback;
 use platform::{
     arm_get_capture_hook, capture_patch_png_base64, disarm_get_capture_hook, ensure_get_capture_hook_thread,
-    get_mouse_pos, is_vk_down_windows, take_get_capture_hook_result, VK_ESCAPE, VK_LBUTTON, VK_MBUTTON,
+    get_mouse_pos, is_vk_down_windows, jump_mouse_to, take_get_capture_hook_result, VK_ESCAPE, VK_LBUTTON, VK_MBUTTON,
     VK_RBUTTON,
 };
 use storage::{load_events_from_file, save_events_to_file};
@@ -39,7 +39,7 @@ fn main() -> iced::Result {
         .scale_factor(App::ui_scale_factor)
         .window(iced::window::Settings {
             // Roughly: 1/2 width and 2/3 height of a typical 1024x768 default.
-            size: iced::Size::new(1040.0, 912.0),
+            size: iced::Size::new(1040.0, 1162.0),
             ..Default::default()
         })
         .subscription(App::subscription)
@@ -61,6 +61,8 @@ struct App {
     esc_was_down: bool,
 
     recorder_wait_ms: u64,
+    recorder_mouse_path_enabled: bool,
+    recorder_mouse_path_min_delta_px: u16,
 
     find_image_patch_size: u32,
     find_image_region_size: u32,
@@ -73,6 +75,8 @@ struct App {
     editor_wait_ms: u16,
     editor_click_speed_ms: u16,
     editor_mouse_move_speed_ms: u16,
+    editor_click_split_px: u16,
+    editor_click_max_hold_ms: u16,
     editor_target_precision_percent: u16,
     editor_target_timeout_ms: u16,
     editor_click_target: ClickTarget,
@@ -103,6 +107,8 @@ struct App {
     playback_active_index: Option<usize>,
     playback_last_scrolled_index: Option<usize>,
 
+    window_height_px: f32,
+
     // Shared recorder state for the background poller
     recorder_state: Arc<Mutex<RecorderState>>,
 }
@@ -121,6 +127,8 @@ impl Default for App {
             current_middle_down: false,
             esc_was_down: false,
             recorder_wait_ms: 10,
+            recorder_mouse_path_enabled: false,
+            recorder_mouse_path_min_delta_px: 0,
 
             find_image_patch_size: 64,
             find_image_region_size: 600,
@@ -133,6 +141,8 @@ impl Default for App {
             editor_wait_ms: 20,
             editor_click_speed_ms: 20,
             editor_mouse_move_speed_ms: 150,
+            editor_click_split_px: 10,
+            editor_click_max_hold_ms: 50,
             editor_target_precision_percent: 90,
             editor_target_timeout_ms: 2000,
             editor_click_target: ClickTarget::Left,
@@ -160,6 +170,7 @@ impl Default for App {
             playback_progress: None,
             playback_active_index: None,
             playback_last_scrolled_index: None,
+            window_height_px: 1162.0,
             recorder_state: Arc::new(Mutex::new(RecorderState::default())),
         }
     }
@@ -197,6 +208,18 @@ impl App {
     fn sync_editor_mouse_move_speed_default(&mut self) {
         self.editor_mouse_move_speed_ms =
             Self::default_mouse_move_speed_for_mode(self.active_editor_mode());
+    }
+
+    fn estimated_visible_event_rows(&self) -> usize {
+        // Approximate based on current fixed window layout in window logical units.
+        // Resize events provide logical size, so do not rescale by ui_scale_factor here.
+        // Keep a conservative estimate to avoid under-scrolling the active row.
+        let window_h_logical = self.window_height_px;
+        let reserved_h_logical = 245.0;
+        let row_h_logical = 60.0;
+
+        let rows = ((window_h_logical - reserved_h_logical) / row_h_logical).floor();
+        rows.max(3.0) as usize
     }
 }
 

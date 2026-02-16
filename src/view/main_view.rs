@@ -15,6 +15,25 @@ impl App {
             .map(|e| e.ms_from_start)
             .unwrap_or(0);
 
+        let frame_progress_text = {
+            let total = self.events.len();
+            if total == 0 {
+                "Frame 0-0".to_string()
+            } else {
+                let current = self
+                    .playback_active_index
+                    .map(|i| i.saturating_add(1).min(total))
+                    .unwrap_or(0);
+                format!("Frame {current}-{total}")
+            }
+        };
+
+        let lower_left_text = match self.mode {
+            Mode::Playing => format!("Playing: {frame_progress_text}"),
+            Mode::Recording => format!("Recording: {frame_progress_text}"),
+            Mode::Idle => format!("Idle: {frame_progress_text}"),
+        };
+
         let can_record = self.mode != Mode::Playing;
         let can_play = !self.events.is_empty() && self.mode != Mode::Recording;
 
@@ -127,28 +146,101 @@ impl App {
 
         let mut last_pos: Option<(i32, i32)> = None;
         let mut rows: Vec<Element<Message>> = Vec::with_capacity(self.events.len().min(1000) + 1);
+        let dynamic_moves_view = true;
 
-        for (i, ev) in self.events.iter().take(1000).enumerate() {
-            let (action, value, new_last_pos) = format_event_with_prev(ev, last_pos);
-            last_pos = new_last_pos;
+        let mut i = 0usize;
+        let mut shown_rows = 0usize;
+        while i < self.events.len() && shown_rows < 1000 {
+            let row_start = i;
+            let (row_end, action, value, thumb, new_last_pos) = if dynamic_moves_view {
+                if let RecordedEventKind::Move { .. } = self.events[i].kind {
+                    let mut j = i;
+                    let mut points = Vec::new();
+                    while j < self.events.len() {
+                        if let RecordedEventKind::Move { x, y } = self.events[j].kind {
+                            points.push((x, y));
+                            j += 1;
+                        } else {
+                            break;
+                        }
+                    }
 
-            let thumb: Element<Message> = if let Some(handle) = self.thumb_handle_for_event(ev) {
-                container(image(handle).width(Length::Fixed(48.0)).height(Length::Fixed(48.0)))
-                    .width(Length::Fixed(48.0))
-                    .height(Length::Fixed(48.0))
-                    .into()
+                    if points.len() >= 2 {
+                        let last_point = points.last().copied();
+                        (
+                            j - 1,
+                            format!("MOVES {}-{}|(X,Y)", i, j - 1),
+                            format!("{} pts | dynamic", points.len()),
+                            container(iced::widget::Space::new())
+                                .width(Length::Fixed(48.0))
+                                .height(Length::Fixed(48.0))
+                                .into(),
+                            last_point,
+                        )
+                    } else {
+                        let ev = &self.events[i];
+                        let (action, value, new_last_pos) = format_event_with_prev(ev, last_pos);
+                        let thumb: Element<Message> = if let Some(handle) = self.thumb_handle_for_event(ev) {
+                            container(image(handle).width(Length::Fixed(48.0)).height(Length::Fixed(48.0)))
+                                .width(Length::Fixed(48.0))
+                                .height(Length::Fixed(48.0))
+                                .into()
+                        } else {
+                            container(iced::widget::Space::new())
+                                .width(Length::Fixed(48.0))
+                                .height(Length::Fixed(48.0))
+                                .into()
+                        };
+                        (i, action, value, thumb, new_last_pos)
+                    }
+                } else {
+                    let ev = &self.events[i];
+                    let (action, value, new_last_pos) = format_event_with_prev(ev, last_pos);
+                    let thumb: Element<Message> = if let Some(handle) = self.thumb_handle_for_event(ev) {
+                        container(image(handle).width(Length::Fixed(48.0)).height(Length::Fixed(48.0)))
+                            .width(Length::Fixed(48.0))
+                            .height(Length::Fixed(48.0))
+                            .into()
+                    } else {
+                        container(iced::widget::Space::new())
+                            .width(Length::Fixed(48.0))
+                            .height(Length::Fixed(48.0))
+                            .into()
+                    };
+                    (i, action, value, thumb, new_last_pos)
+                }
             } else {
-                container(iced::widget::Space::new())
-                    .width(Length::Fixed(48.0))
-                    .height(Length::Fixed(48.0))
-                    .into()
+                let ev = &self.events[i];
+                let (action, value, new_last_pos) = format_event_with_prev(ev, last_pos);
+                let thumb: Element<Message> = if let Some(handle) = self.thumb_handle_for_event(ev) {
+                    container(image(handle).width(Length::Fixed(48.0)).height(Length::Fixed(48.0)))
+                        .width(Length::Fixed(48.0))
+                        .height(Length::Fixed(48.0))
+                        .into()
+                } else {
+                    container(iced::widget::Space::new())
+                        .width(Length::Fixed(48.0))
+                        .height(Length::Fixed(48.0))
+                        .into()
+                };
+                (i, action, value, thumb, new_last_pos)
             };
 
-            let is_selected = self.selected_index == Some(i);
-            let is_playing_row = self.mode == Mode::Playing && self.playback_active_index == Some(i);
+            last_pos = new_last_pos;
+
+            let is_selected = self
+                .selected_index
+                .map(|idx| idx >= row_start && idx <= row_end)
+                .unwrap_or(false);
+            let is_playing_row = self
+                .playback_active_index
+                .map(|idx| idx >= row_start && idx <= row_end)
+                .unwrap_or(false)
+                && self.mode == Mode::Playing;
+
             let clickable = mouse_area(
                 row![
-                    text(i.to_string()).size(14).width(Length::Fixed(32.0)),
+                    text(row_start.to_string()).size(14).width(Length::Fixed(32.0)),
                     thumb,
                     text(action).size(14).width(Length::Fixed(220.0)),
                     text(value).size(14).width(Length::Fill),
@@ -156,13 +248,13 @@ impl App {
                 .spacing(10)
                 .align_y(alignment::Alignment::Center),
             )
-            .on_press(Message::SelectRow(i));
+            .on_press(Message::SelectRow(row_end));
 
             let row_content = row![clickable]
                 .spacing(10)
                 .align_y(alignment::Alignment::Center);
 
-            let is_even = i % 2 == 0;
+            let is_even = row_start % 2 == 0;
             let styled = container(row_content)
                 .padding(6)
                 .style(move |_| iced::widget::container::Style {
@@ -192,6 +284,8 @@ impl App {
                 });
 
             rows.push(styled.into());
+            shown_rows += 1;
+            i = row_end + 1;
         }
 
         let pos_value = if let Some((x, y)) = self.current_pos {
@@ -247,6 +341,8 @@ impl App {
 
         let footer = container(
             row![
+                text(lower_left_text).size(12),
+                text("•").size(12),
                 text(&self.status).size(12),
                 container(iced::widget::Space::new()).width(Length::Fill),
                 text(format!("Events: {}", self.events.len())).size(12),

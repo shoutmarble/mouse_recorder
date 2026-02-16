@@ -40,6 +40,9 @@ impl App {
             _ => Subscription::none(),
         };
 
-        Subscription::batch(vec![record, pos, capture])
+        let resized = iced::window::resize_events()
+            .map(|(_id, size)| Message::WindowResized(size.width, size.height));
+
+        Subscription::batch(vec![record, pos, capture, resized])
     }
 }

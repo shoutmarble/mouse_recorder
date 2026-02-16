@@ -8,13 +8,15 @@ pub(crate) enum FileOpResult {
 
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
-    Noop,
     UiScaleChanged(u16),
 
     StartRecording,
     StopRecording,
     StartPlayback,
     Clear,
+    SetMousePathEnabled(bool),
+    MousePathMinDeltaPxChanged(u16),
+    WindowResized(f32, f32),
     Tick,
     PlaybackFinished(Result<(), String>),
     PosTick,
@@ -50,10 +52,13 @@ pub(crate) enum Message {
     EditorWaitMsChanged(u16),
     EditorClickSpeedMsChanged(u16),
     EditorMouseMoveSpeedMsChanged(u16),
+    EditorClickSplitPxChanged(u16),
+    EditorClickMaxHoldMsChanged(u16),
     EditorTargetPrecisionChanged(u16),
     EditorTargetTimeoutMsChanged(u16),
     EditorUseFindImageToggled(bool),
     EditorStartGetXY,
+    EditorJumpToXY,
     EditorInsertOrApply,
     EditorInsertBelowSelected,
 

@@ -134,14 +134,14 @@ impl App {
 
         let modes_row: Element<Message> = row![
             radio(
-                ClickEdgeMode::Up.label(),
-                ClickEdgeMode::Up,
+                ClickEdgeMode::Down.label(),
+                ClickEdgeMode::Down,
                 Some(selected_mode),
                 on_mode_selected,
             ),
             radio(
-                ClickEdgeMode::Down.label(),
-                ClickEdgeMode::Down,
+                ClickEdgeMode::Up.label(),
+                ClickEdgeMode::Up,
                 Some(selected_mode),
                 on_mode_selected,
             ),

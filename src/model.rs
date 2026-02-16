@@ -9,7 +9,7 @@ pub enum ClickEdgeMode {
 impl ClickEdgeMode {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Auto => "click",
+            Self::Auto => "single",
             Self::Down => "down",
             Self::Up => "up",
             Self::Double => "double",
@@ -68,6 +68,7 @@ impl SearchAnchor {
 #[serde(deny_unknown_fields)]
 pub enum RecordedEventKind {
     Move { x: i32, y: i32 },
+    Moves { points: Vec<(i32, i32)> },
     Wait { ms: u64 },
     FindTarget {
         patch_png_base64: String,

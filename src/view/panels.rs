@@ -29,6 +29,131 @@ fn speed_slider_style(is_inactive: bool) -> iced::widget::slider::Style {
 }
 
 impl App {
+    pub(crate) fn view_mouse_path_panel(&self) -> Element<'_, Message> {
+        let path_state_badge: Element<Message> = container(
+            text(if self.recorder_mouse_path_enabled { "ON" } else { "OFF" }).size(11),
+        )
+        .padding([1, 8])
+        .style(|_| iced::widget::container::Style {
+            text_color: Some(if self.recorder_mouse_path_enabled {
+                Color::from_rgb8(0xc8, 0xe6, 0xc9)
+            } else {
+                Color::from_rgb8(0xc7, 0xcf, 0xd9)
+            }),
+            background: Some(Background::Color(if self.recorder_mouse_path_enabled {
+                Color::from_rgb8(0x1f, 0x3a, 0x2a)
+            } else {
+                Color::from_rgb8(0x2a, 0x2f, 0x36)
+            })),
+            border: Border {
+                color: if self.recorder_mouse_path_enabled {
+                    Color::from_rgb8(0x5b, 0x9f, 0x6b)
+                } else {
+                    Color::from_rgb8(0x6e, 0x7a, 0x89)
+                },
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
+        let toggle_row = row![
+            text("Mouse Path:").size(14),
+            path_state_badge,
+            toggler(self.recorder_mouse_path_enabled)
+                .on_toggle(Message::SetMousePathEnabled),
+            container(iced::widget::Space::new()).width(Length::Fill),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let speed_row = row![
+            text("Mouse move speed:").size(14).width(Length::Fixed(140.0)),
+            slider(
+                0..=500,
+                self.editor_mouse_move_speed_ms,
+                Message::EditorMouseMoveSpeedMsChanged,
+            )
+            .style(|_theme, _status| speed_slider_style(false))
+            .width(Length::Fixed(220.0)),
+            text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let path_sampling_row = row![
+            text("Path sampling:").size(14).width(Length::Fixed(140.0)),
+            slider(
+                0..=20,
+                self.recorder_mouse_path_min_delta_px,
+                Message::MousePathMinDeltaPxChanged,
+            )
+            .style(|_theme, _status| speed_slider_style(false))
+            .width(Length::Fixed(220.0)),
+            text(format!("{} px", self.recorder_mouse_path_min_delta_px)).size(12),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let mouse_path_main_pane: Element<Message> = container(
+            iced::widget::column![toggle_row, speed_row]
+                .spacing(8)
+                .width(Length::Fill),
+        )
+        .padding(8)
+        .width(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x17, 0x1c, 0x23))),
+            border: Border {
+                color: Color::from_rgb8(0x6f, 0x7f, 0x93),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
+        let sampling_pane: Element<Message> = container(path_sampling_row)
+            .padding(8)
+            .width(Length::Fill)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x12, 0x18, 0x20))),
+                border: Border {
+                    color: Color::from_rgb8(0x5d, 0x6d, 0x82),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into();
+
+        container(
+            iced::widget::column![mouse_path_main_pane, sampling_pane]
+                .spacing(8)
+                .width(Length::Fill),
+        )
+        .padding(8)
+        .width(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+            border: Border {
+                color: Color::from_rgb8(0x76, 0x85, 0x96),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into()
+    }
+
     pub(crate) fn view_scale_panel(&self) -> Element<'_, Message> {
         let slider_and_ticks = iced::widget::column![
             slider(25..=100, self.ui_scale_percent, Message::UiScaleChanged)
@@ -356,6 +481,7 @@ impl App {
                                         snap: false,
                                     }),
                                     text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                    button(text("JUMP")).on_press(Message::EditorJumpToXY),
                                 ]
                                 .spacing(4)
                                 .into(),
@@ -392,6 +518,7 @@ impl App {
                                 iced::widget::column![
                                     text("(static preview failed)").size(12),
                                     text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                    button(text("JUMP")).on_press(Message::EditorJumpToXY),
                                 ]
                                 .spacing(4)
                                 .into(),
@@ -460,6 +587,7 @@ impl App {
                                     snap: false,
                                 }),
                                 text(format!("GET:  {grabbed_xy_text}")).size(12),
+                                button(text("JUMP")).on_press(Message::EditorJumpToXY),
                             ]
                             .spacing(4)
                             .into(),
@@ -493,9 +621,9 @@ impl App {
                 text_color: None,
                 background: Some(Background::Color(Color::from_rgb8(0x1b, 0x1f, 0x26))),
                 border: Border {
-                    color: Color::from_rgb8(0x76, 0x85, 0x96),
-                    width: 1.0,
-                    radius: 8.0.into(),
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
                 },
                 shadow: Shadow::default(),
                 snap: false,
@@ -527,9 +655,6 @@ impl App {
             "INSERT CLICK"
         };
 
-        let active_mode = self.active_editor_mode();
-        let speed_enabled = !matches!(active_mode, ClickEdgeMode::Up | ClickEdgeMode::Down);
-
         let wait_group: Element<Message> = container(
             iced::widget::column![
                 row![
@@ -558,66 +683,64 @@ impl App {
         })
         .into();
 
-        let click_speed_slider = if speed_enabled {
-            slider(0..=100, self.editor_click_speed_ms, Message::EditorClickSpeedMsChanged)
-        } else {
-            slider(0..=100, self.editor_click_speed_ms, |_| Message::Noop)
-        }
-        .style(move |_theme, _status| speed_slider_style(!speed_enabled))
-        .width(Length::Fixed(180.0));
-
-        let speed_slider: Element<Message> = click_speed_slider.into();
-
-        let speed_row = row![
-            container(text("Click speed:").size(14))
-                .align_x(alignment::Horizontal::Left)
-                .width(Length::Fixed(TARGET_COL_W)),
-            speed_slider,
-            text(format!("{} ms", self.editor_click_speed_ms)).size(12),
-        ]
-        .spacing(8)
-        .align_y(alignment::Alignment::Center);
-
-        let speed_row: Element<Message> = container(speed_row)
-            .style(move |_| iced::widget::container::Style {
-                text_color: if speed_enabled {
-                    None
-                } else {
-                    Some(Color::from_rgb8(0x8b, 0x94, 0xa1))
-                },
-                background: Some(Background::Color(if speed_enabled {
-                    Color::TRANSPARENT
-                } else {
-                    Color::from_rgb8(0x14, 0x17, 0x1c)
-                })),
-                border: Border {
-                    color: if speed_enabled {
-                        Color::TRANSPARENT
-                    } else {
-                        Color::from_rgb8(0x3e, 0x46, 0x52)
-                    },
-                    width: if speed_enabled { 0.0 } else { 1.0 },
-                    radius: 6.0.into(),
-                },
-                shadow: Shadow::default(),
-                snap: false,
-            })
-            .padding([4, 6])
-            .into();
-
-        let mouse_move_speed_row = row![
-            container(text("Mouse move speed:").size(14)).width(Length::Fixed(TARGET_COL_W)),
-            slider(
-                0..=500,
-                self.editor_mouse_move_speed_ms,
-                Message::EditorMouseMoveSpeedMsChanged,
-            )
-            .style(|_theme, _status| speed_slider_style(false))
-            .width(Length::Fixed(180.0)),
-            text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
-        ]
-        .spacing(8)
-        .align_y(alignment::Alignment::Center);
+        let threshold_group: Element<Message> = container(
+            iced::widget::column![
+                text("Click detection thresholds").size(13),
+                row![
+                    container(text("Click speed:").size(13)).width(Length::Fixed(TARGET_COL_W)),
+                    slider(
+                        0..=100,
+                        self.editor_click_speed_ms,
+                        Message::EditorClickSpeedMsChanged,
+                    )
+                    .style(|_theme, _status| speed_slider_style(false))
+                    .width(Length::Fixed(180.0)),
+                    text(format!("{} ms", self.editor_click_speed_ms)).size(12),
+                ]
+                .spacing(8)
+                .align_y(alignment::Alignment::Center),
+                row![
+                    container(text("Pixel split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
+                    slider(
+                        0..=20,
+                        self.editor_click_split_px,
+                        Message::EditorClickSplitPxChanged,
+                    )
+                    .style(|_theme, _status| speed_slider_style(false))
+                    .width(Length::Fixed(180.0)),
+                    text(format!("{} px", self.editor_click_split_px)).size(12),
+                ]
+                .spacing(8)
+                .align_y(alignment::Alignment::Center),
+                row![
+                    container(text("Hold split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
+                    slider(
+                        0..=100,
+                        self.editor_click_max_hold_ms,
+                        Message::EditorClickMaxHoldMsChanged,
+                    )
+                    .style(|_theme, _status| speed_slider_style(false))
+                    .width(Length::Fixed(180.0)),
+                    text(format!("{} ms", self.editor_click_max_hold_ms)).size(12),
+                ]
+                .spacing(8)
+                .align_y(alignment::Alignment::Center),
+            ]
+            .spacing(6),
+        )
+        .padding(8)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
+            border: Border {
+                color: Color::from_rgb8(0x76, 0x85, 0x96),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
 
         let mode_rows = iced::widget::column![
             row![
@@ -629,8 +752,7 @@ impl App {
             left_row,
             right_row,
             middle_row,
-            speed_row,
-            mouse_move_speed_row,
+            threshold_group,
         ]
         .spacing(6);
 
@@ -759,6 +881,7 @@ impl App {
 
             iced::widget::column![
                 selection_note,
+                self.view_mouse_path_panel(),
                 self.view_click_editor_panel(),
             ]
             .spacing(8)
