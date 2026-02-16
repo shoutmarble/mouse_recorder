@@ -2,8 +2,9 @@ use super::*;
 use crate::state::PendingClick;
 
 impl App {
-    pub(super) fn materialize_moves_grouped_events(&self) -> Vec<RecordedEvent> {
+    pub(super) fn materialize_moves_grouped_events_with_row_map(&self) -> (Vec<RecordedEvent>, Vec<usize>) {
         let mut out: Vec<RecordedEvent> = Vec::with_capacity(self.events.len());
+        let mut row_map: Vec<usize> = Vec::with_capacity(self.events.len());
         let mut i = 0usize;
 
         while i < self.events.len() {
@@ -11,10 +12,14 @@ impl App {
                 RecordedEventKind::Move { .. } => {
                     let mut j = i;
                     let mut points: Vec<(i32, i32)> = Vec::new();
+                    let mut move_meta: Option<ClickListMeta> = None;
                     while j < self.events.len() {
-                        match self.events[j].kind {
+                        match &self.events[j].kind {
                             RecordedEventKind::Move { x, y } => {
-                                points.push((x, y));
+                                points.push((*x, *y));
+                                if self.events[j].click_meta.is_some() {
+                                    move_meta = self.events[j].click_meta.clone();
+                                }
                                 j += 1;
                             }
                             _ => break,
@@ -23,26 +28,34 @@ impl App {
 
                     if points.len() >= 2 {
                         let end = &self.events[j - 1];
+                        let last_pos = points.last().copied();
                         out.push(RecordedEvent {
                             ms_from_start: end.ms_from_start,
-                            kind: RecordedEventKind::Moves { points: points.clone() },
-                            pos: points.last().copied(),
-                            click_meta: None,
+                            kind: RecordedEventKind::Moves { points },
+                            pos: last_pos,
+                            click_meta: move_meta,
                         });
+                        row_map.push(j - 1);
                     } else {
                         out.push(self.events[i].clone());
+                        row_map.push(i);
                     }
 
                     i = j;
                 }
                 _ => {
                     out.push(self.events[i].clone());
+                    row_map.push(i);
                     i += 1;
                 }
             }
         }
 
-        out
+        (out, row_map)
+    }
+
+    pub(super) fn materialize_moves_grouped_events(&self) -> Vec<RecordedEvent> {
+        self.materialize_moves_grouped_events_with_row_map().0
     }
 
     pub(super) fn append_recorded_events_compacting_moves(
@@ -292,7 +305,7 @@ impl App {
             middle_mode: ClickEdgeMode::Auto,
             wait_ms: self.recorder_wait_ms as u16,
             click_speed_ms: self.editor_click_speed_ms.clamp(0, 100),
-            mouse_move_speed_ms: self.editor_mouse_move_speed_ms.clamp(0, 500),
+            mouse_move_speed_ms: self.editor_mouse_move_speed_ms.clamp(5, 50),
             use_find_image: self.editor_use_find_image,
             target_precision: (self.editor_target_precision_percent as f32 / 100.0).clamp(0.5, 1.0),
             target_timeout_ms: (self.editor_target_timeout_ms as u64).clamp(200, 10000),

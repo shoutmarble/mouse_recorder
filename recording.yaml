@@ -1,70 +1,95 @@
-- ms_from_start: 45
+- ms_from_start: 44
   kind: !Moves
     points:
-    - - 2334
-      - 499
-    - - 2332
-      - 500
-    - - 2322
-      - 504
-    - - 2299
-      - 510
-    - - 2263
-      - 525
-    - - 2208
+    - - 2218
+      - 427
+    - - 2219
+      - 427
+    - - 2224
+      - 427
+    - - 2223
+      - 427
+    - - 2212
+      - 433
+    - - 2179
+      - 446
+    - - 2134
+      - 469
+    - - 2068
+      - 503
+    - - 1975
       - 548
-    - - 2130
-      - 573
-    - - 2040
-      - 605
-    - - 1939
-      - 638
-    - - 1848
-      - 668
-    - - 1744
-      - 696
-    - - 1671
-      - 717
-    - - 1608
-      - 737
-    - - 1548
-      - 755
-    - - 1486
-      - 773
-    - - 1449
-      - 783
-    - - 1420
-      - 789
-    - - 1407
-      - 792
-    - - 1405
-      - 792
-    - - 1401
-      - 792
-    - - 1392
-      - 791
-    - - 1378
-      - 788
-    - - 1360
-      - 787
-    - - 1345
-      - 784
-    - - 1338
-      - 781
-    - - 1338
-      - 779
-    - - 1338
-      - 776
+    - - 1843
+      - 601
+    - - 1657
+      - 667
+    - - 1494
+      - 722
+    - - 1317
+      - 785
+    - - 1153
+      - 839
+    - - 1005
+      - 889
+    - - 907
+      - 926
+    - - 850
+      - 946
+    - - 828
+      - 958
+    - - 826
+      - 958
+    - - 827
+      - 958
+    - - 838
+      - 951
+    - - 848
+      - 942
+    - - 860
+      - 934
+    - - 872
+      - 924
+    - - 886
+      - 913
+    - - 904
+      - 898
+    - - 926
+      - 880
+    - - 952
+      - 862
+    - - 974
+      - 846
+    - - 985
+      - 837
+    - - 988
+      - 835
+    - - 984
+      - 834
+    - - 978
+      - 832
+    - - 970
+      - 831
+    - - 954
+      - 833
   pos:
-  - 1338
-  - 776
-  click_meta: null
-- ms_from_start: 45
+  - 954
+  - 833
+  click_meta:
+    left_mode: Auto
+    right_mode: Auto
+    middle_mode: Auto
+    wait_ms: 20
+    click_speed_ms: 20
+    mouse_move_speed_ms: 27
+    use_find_image: false
+    target_precision: 0.9
+    target_timeout_ms: 2000
+- ms_from_start: 44
   kind: !LeftDown
     patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABDklEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a+uh9H8/0Xw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/7/xj1IpBHARFdPzAAAAAElFTkSuQmCC
   pos:
-  - 1338
-  - 773
+  - 885
+  - 845
   click_meta:
     left_mode: Down
     right_mode: Auto
@@ -75,111 +100,96 @@
     use_find_image: false
     target_precision: 0.9
     target_timeout_ms: 2000
-- ms_from_start: 93
+- ms_from_start: 82
   kind: !Moves
     points:
-    - - 1338
-      - 773
-    - - 1336
-      - 769
-    - - 1336
-      - 767
-    - - 1333
-      - 764
-    - - 1332
-      - 763
-    - - 1327
-      - 761
-    - - 1302
-      - 765
-    - - 1254
-      - 783
-    - - 1204
-      - 813
-    - - 1180
-      - 840
-    - - 1180
+    - - 885
+      - 845
+    - - 835
       - 857
-    - - 1210
-      - 875
-    - - 1268
-      - 882
-    - - 1325
-      - 882
-    - - 1345
-      - 885
-    - - 1344
-      - 890
-    - - 1330
-      - 914
-    - - 1288
-      - 959
-    - - 1255
-      - 995
-    - - 1249
-      - 1013
-    - - 1256
-      - 1020
-    - - 1286
-      - 1025
-    - - 1316
-      - 1026
-    - - 1318
-      - 1032
-    - - 1300
-      - 1068
-    - - 1260
-      - 1121
-    - - 1221
-      - 1175
-    - - 1213
-      - 1205
-    - - 1223
-      - 1220
-    - - 1240
-      - 1229
-    - - 1249
-      - 1235
-    - - 1249
-      - 1244
-    - - 1243
+    - - 831
+      - 859
+    - - 696
+      - 905
+    - - 612
+      - 938
+    - - 543
+      - 974
+    - - 505
+      - 1006
+    - - 563
+      - 1007
+    - - 682
+      - 996
+    - - 806
+      - 979
+    - - 881
+      - 975
+    - - 890
+      - 985
+    - - 880
+      - 1015
+    - - 850
+      - 1057
+    - - 811
+      - 1108
+    - - 792
+      - 1153
+    - - 802
+      - 1183
+    - - 839
+      - 1208
+    - - 866
+      - 1226
+    - - 871
+      - 1241
+    - - 870
+      - 1256
+    - - 865
+      - 1267
+    - - 862
       - 1274
-    - - 1231
-      - 1314
-    - - 1227
-      - 1346
-    - - 1229
-      - 1374
-    - - 1235
-      - 1398
-    - - 1235
-      - 1401
-    - - 1235
-      - 1427
-    - - 1237
-      - 1454
-    - - 1240
-      - 1473
-    - - 1243
-      - 1487
-    - - 1244
-      - 1496
-    - - 1246
-      - 1500
-    - - 1245
-      - 1502
-    - - 1245
-      - 1503
+    - - 863
+      - 1276
+    - - 874
+      - 1279
+    - - 895
+      - 1280
+    - - 904
+      - 1286
+    - - 907
+      - 1292
+    - - 911
+      - 1304
+    - - 917
+      - 1316
+    - - 932
+      - 1330
+    - - 950
+      - 1336
+    - - 967
+      - 1342
+    - - 971
+      - 1345
   pos:
-  - 1245
-  - 1503
-  click_meta: null
-- ms_from_start: 94
+  - 971
+  - 1345
+  click_meta:
+    left_mode: Auto
+    right_mode: Auto
+    middle_mode: Auto
+    wait_ms: 20
+    click_speed_ms: 20
+    mouse_move_speed_ms: 23
+    use_find_image: false
+    target_precision: 0.9
+    target_timeout_ms: 2000
+- ms_from_start: 83
   kind: !LeftUp
-    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADu0lEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a+uh9G8iJa//Esc/ezP8j9BueZajn/2Z/PvROVfoT7kofxP0c6d5T8Awb9CffCD+R8jk9zb49+J4F9Bsxnl5Cn+p8gLF/h3IvhXihtv4H+K3N/n34ngX6lcex3/U3h/n38nKv9K5fQp/qfw4QH/TlT+lWJzi/8pcvcS/05U/rVmM/6nyIMD/p2o/Ct5mvifop07y78TlX8lrdf8T5HnL/DvROVfyV3H/xS5d4l/J4J/pdjc5H+SPHeWfweCf6Vy5gz/k7TdS/w7EPwrxcmTaGOT/yl8cMC/A8G/QX3oQ/ifIvf3+Hcg+DfoX+Il+J/Ce3v8OxD8G/Qv87Ig8T9B7h/w70DwbxBbW9SHPYz/CXxwwL8Dwb9R/9Ivzf8EebDPvwPBv9Hs5V8BJP67+eCAfweCf6PY2aE+7GH8d8u9ff4dCP4dZi/+4vx3y4N9/h0I/h26F3tx/ifIoyP+jQj+HcqNNxJb2/x388E+/0YE/07l5pv47+bDI/6NqPw7xclT/HfLgwP+jaj8e40j/918eMi/EZV/h6Nf/AXWf/on/HfLo0P+jaj8Gw2PexzLn/95/ifwwSH/RlT+jVQr/1P44IB/Iyr/RrG5yf8UXq/5N6Lyb6TNTf6niDNn+Dci+DeKY8fQbMb/BPX66/k3Ivi3kqiPfCT/E5Qbb+DfiODfYfaYx/DfrZw6Tbnuev6NCP4d+ld4RaiV/079q70q/w4E/w7a3GT2Sq/Mf5sIFq/xmvw7EPw7LV7vdUHiv8P8NV8LbW7y70Dw71Suu575a7wm/9Xi2HE23vIt+Xci+A+w8XZvR7nmWv4rbb3ne6L5nH8ngv8A6jq23v/9UdfxX2H+Bm9I95jH8B+A4D9Ivekmtj/iI6Hv+c80e/lXYPNt3ob/IAT/gbqHP5xjH/OxaD7nP8PsFV6Rrfd9X/4DofUwmv9geeECB9/7PYxPehL/EWI+Z+Md34nZK78y/8HQehjNf5L17/8+Bz/x47Be8281e7mXZ+Ot35o4dYr/BGg9jOY/kZdLhj/7U1a/+7tMd93Fi6LeeCOzV3xFuld+Fcr2Nv+J0HoYzX+RdvvtTLffTjt7lumuO2G1glqJrW20vU298Ua6F39xYnub/yJoPYzm/y+C/98I/n8j+P+N4P83gv/fCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+NfwRY2svT1fi8uwAAAABJRU5ErkJggg==
+    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAENElEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a+uh9H8/0Xw/xvB/28E/78R/P9G8P8bwf9vBP+/EefPn+f/McrP/uzPfPa58+d41KMexdbWNv/PoJtvvtk801u91VvzLu/6rrz8y788/0+gm2++2TyXRz/60bzru707b/3Wb83Gxgb/h6Gbb77ZvACbm5u83du/Pe/zPu/LzTffzP9B6Oabbzb/Akm85mu9Fu/1nu/Fa7zmayKJ/yPQzTffbP4VHvKQh/Ae7/GevO3bvR1bW1v8L4duvvlm82+wWCx4q7d6K9727d6el33Zl+V/KXTzzTebf6eHPvShvN3bvT1v/TZvzbXXXsf/Iujmm282/0Eigld9tVfj7d7u7XiDN3hD5vM5/8Ohm2++2fwn2NjY4FVe5VV57dd5HV77tV+L66+/gf+B0M0332z+CzziEY/gNV/rtXit13wtXvXVXo3/IdDNN99s/ovNZjNe7uVfnld/tVfn5V/hFXjZl31Z/pugm2++2fwP8Mqv8ip84Ad8IK/5Wq/FfyF08803m/9BHvvYx/I5n/t5vMzLvAz/BQj+h3nc4x7Hu77LO/MzP/PT/Bcg+B9oHEc+7mM/lp/92Z/hPxnB/2Af+zEfw5//+Z/zn4jgf7hP+sRPoLXGfxKC/+Ge8Yxn8P3f9338JyH4X+CHfugH+U9C8L/AU57yFJ72tKfxn4Dgf4m//Mu/5D8Blf8l7rzzDv4TUPlf4ux99/GfgMr/EjvHjvGfgHiv935vXuqlXor/6a679jr+E6D1MJpn+su//Ev++q/+ir/8y7/kL/7yLzh73338T/GjP/bjvOzLviz/wdB6GM0LcOedd/IXf/Hn/Nqv/hq/9Eu/yH+XkydP8qd/9uf8J6DyQtx4443ceOONvOVbvhXPeMYz+NZv+WZ+8id/knEc+a/0Du/4jvwnQethNP8KZ++7j2/9tm/lu77zO/mvsFgs+L3f/wOOHz/OfwKCf6Uz11zDp33ap/NHf/THvOu7viu1Vv4zfdqnfwbHjx/nPwlaD6P5d7jrrjv56q/6an7mZ36a1hr/kd7wDd+Ib/ymb+I/EVoPo/kPcO7sWX7hF36BX/zFX+Av//Ivsc2/x+u87uvy9V//DcxmM/4TofUwmv9g9957D7/1W7/NH/z+7/M7v/PbHB0d8aLa3NzkAz/wg/iwD/9w/gug9TCa/0Tr9Zrf/u3f4ju+/dv5y7/8S16Qxz72sbzlW74V7/TO78z29jb/RdB6GM1/kVtvvZVf+9VfZblaguHkyZNce921vNiLvRg33HAj/w3QehjN/18E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/xj8C608D+w0AnMMAAAAASUVORK5CYII=
   pos:
-  - 1243
-  - 1505
+  - 973
+  - 1344
   click_meta:
     left_mode: Up
     right_mode: Auto
@@ -190,135 +200,134 @@
     use_find_image: false
     target_precision: 0.9
     target_timeout_ms: 2000
-- ms_from_start: 164
+- ms_from_start: 148
   kind: !Moves
     points:
-    - - 1243
-      - 1505
-    - - 1242
-      - 1505
-    - - 1244
-      - 1504
-    - - 1273
-      - 1484
-    - - 1319
-      - 1454
-    - - 1370
-      - 1420
-    - - 1430
-      - 1378
-    - - 1493
-      - 1330
-    - - 1561
-      - 1279
-    - - 1645
-      - 1216
-    - - 1744
-      - 1148
-    - - 1970
-      - 1007
-    - - 2071
-      - 950
-    - - 2155
-      - 899
-    - - 2200
-      - 865
-    - - 2225
-      - 839
-    - - 2248
-      - 811
-    - - 2270
-      - 782
-    - - 2290
-      - 758
-    - - 2309
-      - 734
-    - - 2326
-      - 712
-    - - 2339
-      - 691
-    - - 2350
-      - 676
-    - - 2359
-      - 662
-    - - 2366
-      - 650
-    - - 2374
-      - 643
-    - - 2381
-      - 634
-    - - 2386
-      - 629
-    - - 2387
-      - 623
-    - - 2393
-      - 616
-    - - 2396
-      - 608
-    - - 2399
-      - 596
-    - - 2399
-      - 584
-    - - 2399
-      - 574
-    - - 2402
-      - 568
-    - - 2404
-      - 560
-    - - 2405
-      - 554
-    - - 2407
-      - 551
-    - - 2408
-      - 548
-    - - 2408
-      - 547
-    - - 2407
-      - 545
-    - - 2406
-      - 545
-    - - 2406
-      - 544
-    - - 2404
-      - 541
-    - - 2404
-      - 536
-    - - 2403
-      - 533
-    - - 2403
-      - 527
-    - - 2400
-      - 524
-    - - 2398
-      - 520
-    - - 2397
-      - 517
-    - - 2397
-      - 514
-    - - 2397
-      - 512
-    - - 2397
-      - 511
-    - - 2395
-      - 506
-    - - 2395
+    - - 973
+      - 1344
+    - - 988
+      - 1335
+    - - 1012
+      - 1317
+    - - 1033
+      - 1305
+    - - 1052
+      - 1291
+    - - 1073
+      - 1276
+    - - 1096
+      - 1264
+    - - 1115
+      - 1251
+    - - 1172
+      - 1200
+    - - 1216
+      - 1158
+    - - 1286
+      - 1099
+    - - 1376
+      - 1041
+    - - 1469
+      - 985
+    - - 1577
+      - 924
+    - - 1666
+      - 867
+    - - 1723
+      - 817
+    - - 1772
+      - 771
+    - - 1822
+      - 726
+    - - 1870
+      - 687
+    - - 1919
+      - 652
+    - - 1961
+      - 622
+    - - 1988
+      - 601
+    - - 2014
+      - 580
+    - - 2042
+      - 555
+    - - 2074
+      - 529
+    - - 2101
       - 502
-    - - 2395
-      - 500
-    - - 2395
-      - 499
-    - - 2395
-      - 497
+    - - 2122
+      - 483
+    - - 2137
+      - 469
+    - - 2150
+      - 457
+    - - 2162
+      - 448
+    - - 2170
+      - 441
+    - - 2176
+      - 436
+    - - 2180
+      - 433
+    - - 2188
+      - 430
+    - - 2200
+      - 427
+    - - 2209
+      - 424
+    - - 2213
+      - 423
+    - - 2219
+      - 423
+    - - 2222
+      - 423
+    - - 2230
+      - 427
+    - - 2239
+      - 431
+    - - 2246
+      - 436
+    - - 2255
+      - 440
+    - - 2258
+      - 442
+    - - 2261
+      - 442
+    - - 2261
+      - 441
+    - - 2264
+      - 438
+    - - 2267
+      - 433
+    - - 2269
+      - 432
+    - - 2269
+      - 430
+    - - 2270
+      - 429
+    - - 2272
+      - 427
+    - - 2273
+      - 427
   pos:
-  - 2395
-  - 497
-  click_meta: null
-- ms_from_start: 165
+  - 2273
+  - 427
+  click_meta:
+    left_mode: Auto
+    right_mode: Auto
+    middle_mode: Auto
+    wait_ms: 20
+    click_speed_ms: 20
+    mouse_move_speed_ms: 35
+    use_find_image: false
+    target_precision: 0.9
+    target_timeout_ms: 2000
+- ms_from_start: 149
   kind: !LeftDown
-    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADO0lEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a/++V/8ha+/7jok8YQnPokP/fCPYnd3lweKCD72Yz6Sd37HdyAisM3td9zB3qU9FhsLbr7pZvq+45577uVN3+Kt+Zd82qd8Em/3tm/NNE38yZ/+Gcvlkpd/uZflzrvu5q677uYNXv91+fCP/Bj+8I/+GICNjQW//zu/yd1338ObveXbAND3PX/8B7/DpUuXeMpTn8bZs+c4ffoUL/PSL0VrjY/4qI/lz/78L7jfi7/YY/nar/4Kjh8/zvnz5/mbv/07pmmivP/7f8BnP+5xj+d7vu8H+JIv+wqOjo54brb5wz/6Y37zt36b1pLFYsGZ06e54YYbqLXy1Kc+jZ/9uZ/nS77sKzg4OORf8od/9MccHBxw/fXX8ehHPZLjx4/zK7/663zW53wur/Zqr8IjHv5wfvGXfoXb77gDgK7reN/3eS8ODg74wR/6EQBsI4nTZ07z4Ac9iIc/7KEA/Nqv/waf/blfwOMe93ge6L6zZ/n5X/xlwFx/3XU89rGP4cEPehC67sYHmf+/CP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4P83gv/fqPwLXuYVPo9bHvK21LrJ/zbTdMhtT/9J/urPPoMXgMoL8TKv8Hk89BHvwf9WtW7y0Ee8BwB/9WefwfNB8ELc8pC35f+CWx7ytrwAVF6IWjf5v6DWTV4Agv/fCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4P83gv/fqPwXODj3tzDu8a/W7bB1+iX5T0TlP9nBub/lC5/w/vxbfeqjv52t0y/JfxKC/2zDHv8ex+/5df4TEfz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efxn63f499i97vX5T0TlP9nW6ZfkUx/97Ry/59f519q97vXZOv2S/Cei8l9g6/RLMp1+Sf61tvhPR/D/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8ELMU2H/F8wTYe8APwjzNXDv3XmhpcAAAAASUVORK5CYII=
+    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB7klEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a9ed+ODzP9fBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8blX/By7zC53HLQ96WWjf532aaDrnt6T/JX/3ZZ/ACUHkhXuYVPo+HPuI9+N+q1k0e+oj3AOCv/uwzeD4IXohbHvK2/F9wy0PelheAygtR6yb/F9S6yQtA8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8blf8CB+f+FsY9/tW6HbZOvyT/iaj8Jzs497d84RPen3+rT330t7N1+iX5T0Lwn23Y49/j+D2/zn8igv/fCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4P83gv9s/Q7/HrvXvT7/iaj8J9s6/ZJ86qO/neP3/Dr/WrvXvT5bp1+S/0RU/gtsnX5JptMvyb/WFv/pCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4P83gv/fCP5/I3ghpumQ/wum6ZAXgOCFuO3pP8n/Bbc9/Sd5Aai8EH/1Z58BwC0PeVtq3eR/m2k65Lan/yR/9WefwQuArrvxQeb/L/4RcKs9L3I/gvYAAAAASUVORK5CYII=
   pos:
-  - 2395
-  - 497
+  - 2273
+  - 427
   click_meta:
     left_mode: Down
     right_mode: Auto
@@ -329,20 +338,29 @@
     use_find_image: false
     target_precision: 0.9
     target_timeout_ms: 2000
-- ms_from_start: 174
+- ms_from_start: 159
   kind: !Move
-    x: 2395
-    y: 497
+    x: 2273
+    y: 427
   pos:
-  - 2395
-  - 497
-  click_meta: null
-- ms_from_start: 175
+  - 2273
+  - 427
+  click_meta:
+    left_mode: Auto
+    right_mode: Auto
+    middle_mode: Auto
+    wait_ms: 20
+    click_speed_ms: 20
+    mouse_move_speed_ms: 64
+    use_find_image: false
+    target_precision: 0.9
+    target_timeout_ms: 2000
+- ms_from_start: 160
   kind: !LeftUp
-    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADN0lEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a/++V/8ha+/7jok8YQnPokP/fCPYnd3lweKCD72Yz6Sd37HdyAisM3td9zB3qU9FhsLbr7pZvq+45577uVN3+Kt+Zd82qd8Em/3tm/NNE38yZ/+Gcvlkpd/uZflzrvu5q677uYNXv91+fCP/Bj+8I/+GICNjQW//zu/yd1338ObveXbAND3PX/8B7/DpUuXeMpTn8bZs+c4ffoUL/PSL0VrjY/4qI/lz/78L7jfi7/YY/nar/4Kjh8/zvnz5/mbv/07pmmivP/7f8BnP+5xj+d7vu8H+JIv+wqOjo54brb5wz/6Y37zt36b1pLFYsGZ06e54YYbqLXy1Kc+jZ/9uZ/nS77sKzg4OORf8od/9MccHBxw/fXX8ehHPZLjx4/zK7/663zW53wur/Zqr8IjHv5wfvGXfoXb77gDgK7reN/3eS8ODg74wR/6EQBsI4nTZ07z4Ac9iIc/7KEA/Nqv/waf/blfwOMe93ge6L6zZ/n5X/xlwFx/3XU89rGP4cEPehC67sYHmf+/CP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4P83gv/fqPwLHvFin8Z1N74lpW7wv02bjrjnzp/lyf/wBbwAVF6IR7zYp3Hjg96Z/61K3eDGB70zAE/+hy/g+SB4Ia678S35v+C6G9+SF4DKC1HqBv8XlLrBC0Dw/xvB/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xuV/wKri38P0wH/anWL+YkX5z8Rlf9kq4t/zzfc+VH8W30YX8P8xIvzn4TgP9u4z7/HNed/m/9EBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8bwf9vBP/Zum3+Pe479dr8J6Lyn2x+4sX5ML6Ga87/Nv9a9516beYnXpz/RFT+C8xPvDh7J16cf605/+kI/n8j+P+N4P83gv/fCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8jeCHadMT/BW064gXgHwHusMLuqWnEVQAAAABJRU5ErkJggg==
+    patch_png_base64: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB6UlEQVR4Ae3AA6AkWZbG8f937o3IzKdyS2Oubdu2bdu2bdu2bWmMnpZKr54yMyLu+Xa3anqmhztr1a9ed+ODzP9fBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28E/78R/P9G8P8blX/BI17s07juxrek1A3+t2nTEffc+bM8+R++gBeAygvxiBf7NG580Dvzv1WpG9z4oHcG4Mn/8AU8HwQvxHU3viX/F1x341vyAlB5IUrd4P+CUjd4AQj+fyP4/43g/zeC/98I/n8j+P+N4P83gv/fCP5/I/j/jeD/N4L/3wj+f6PyX2B18e9hOuBfrW4xP/Hi/Cei8p9sdfHv+YY7P4p/qw/ja5ifeHH+kxD8Zxv3+fe45vxv85+I4P83gv/fCP5/I/j/jeD/N4L/3wj+fyP4/43g/zeC/98I/n8j+P+N4D9bt82/x32nXpv/RFT+k81PvDgfxtdwzfnf5l/rvlOvzfzEi/OfiMp/gfmJF2fvxIvzrzXnPx3B/28E/78R/P9G8P8bwf9vBP+/Efz/RvD/G8H/bwT/vxH8/0bw/xvB/28EL0Sbjvi/oE1HvAAEL8Q9d/4s/xfcc+fP8gJQeSGe/A9fAMB1N74lpW7wv02bjrjnzp/lyf/wBbwA6LobH2T+/+IfAbn5PLrV8pBdAAAAAElFTkSuQmCC
   pos:
-  - 2395
-  - 497
+  - 2273
+  - 427
   click_meta:
     left_mode: Up
     right_mode: Auto
@@ -353,11 +371,20 @@
     use_find_image: false
     target_precision: 0.9
     target_timeout_ms: 2000
-- ms_from_start: 176
+- ms_from_start: 161
   kind: !Move
-    x: 2395
-    y: 497
+    x: 2273
+    y: 427
   pos:
-  - 2395
-  - 497
-  click_meta: null
+  - 2273
+  - 427
+  click_meta:
+    left_mode: Auto
+    right_mode: Auto
+    middle_mode: Auto
+    wait_ms: 20
+    click_speed_ms: 20
+    mouse_move_speed_ms: 27
+    use_find_image: false
+    target_precision: 0.9
+    target_timeout_ms: 2000

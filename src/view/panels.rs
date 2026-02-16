@@ -28,6 +28,20 @@ fn speed_slider_style(is_inactive: bool) -> iced::widget::slider::Style {
     }
 }
 
+fn slider_tooltip_frame_style() -> iced::widget::container::Style {
+    iced::widget::container::Style {
+        text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
+        background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
+        border: Border {
+            color: Color::from_rgb8(0x68, 0x9d, 0xff),
+            width: 1.0,
+            radius: 8.0.into(),
+        },
+        shadow: Shadow::default(),
+        snap: false,
+    }
+}
+
 impl App {
     pub(crate) fn view_mouse_path_panel(&self) -> Element<'_, Message> {
         let path_state_badge: Element<Message> = container(
@@ -71,13 +85,20 @@ impl App {
 
         let speed_row = row![
             text("Mouse move speed:").size(14).width(Length::Fixed(140.0)),
-            slider(
-                0..=500,
-                self.editor_mouse_move_speed_ms,
-                Message::EditorMouseMoveSpeedMsChanged,
+            tooltip(
+                slider(
+                    5..=50,
+                    self.editor_mouse_move_speed_ms,
+                    Message::EditorMouseMoveSpeedMsChanged,
+                )
+                .style(|_theme, _status| speed_slider_style(false))
+                .width(Length::Fixed(220.0)),
+                text(format!("{} ms", self.editor_mouse_move_speed_ms)),
+                TooltipPosition::Top,
             )
-            .style(|_theme, _status| speed_slider_style(false))
-            .width(Length::Fixed(220.0)),
+            .gap(6)
+            .padding(8)
+            .style(|_| slider_tooltip_frame_style()),
             text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
         ]
         .spacing(8)
@@ -85,13 +106,20 @@ impl App {
 
         let path_sampling_row = row![
             text("Path sampling:").size(14).width(Length::Fixed(140.0)),
-            slider(
-                0..=20,
-                self.recorder_mouse_path_min_delta_px,
-                Message::MousePathMinDeltaPxChanged,
+            tooltip(
+                slider(
+                    0..=10,
+                    self.recorder_mouse_path_min_delta_px,
+                    Message::MousePathMinDeltaPxChanged,
+                )
+                .style(|_theme, _status| speed_slider_style(false))
+                .width(Length::Fixed(220.0)),
+                text(format!("{} px", self.recorder_mouse_path_min_delta_px)),
+                TooltipPosition::Top,
             )
-            .style(|_theme, _status| speed_slider_style(false))
-            .width(Length::Fixed(220.0)),
+            .gap(6)
+            .padding(8)
+            .style(|_| slider_tooltip_frame_style()),
             text(format!("{} px", self.recorder_mouse_path_min_delta_px)).size(12),
         ]
         .spacing(8)
@@ -156,8 +184,15 @@ impl App {
 
     pub(crate) fn view_scale_panel(&self) -> Element<'_, Message> {
         let slider_and_ticks = iced::widget::column![
-            slider(25..=100, self.ui_scale_percent, Message::UiScaleChanged)
-                .width(Length::Fill),
+            tooltip(
+                slider(25..=100, self.ui_scale_percent, Message::UiScaleChanged)
+                    .width(Length::Fill),
+                text(format!("{:.2}x", self.ui_scale_factor())),
+                TooltipPosition::Top,
+            )
+            .gap(6)
+            .padding(8)
+            .style(|_| slider_tooltip_frame_style()),
             row![
                 text("0.25").size(11),
                 container(iced::widget::Space::new()).width(Length::Fill),
@@ -249,14 +284,14 @@ impl App {
 
         let target_mode_box = || -> Element<Message> {
             let xy_row = radio(
-                "(X,Y)",
+                "GOTO (X,Y)",
                 false,
                 Some(self.editor_use_find_image),
                 Message::EditorUseFindImageToggled,
             );
 
             let image_row = radio(
-                "(find target)",
+                "FIND IMAGE",
                 true,
                 Some(self.editor_use_find_image),
                 Message::EditorUseFindImageToggled,
@@ -315,22 +350,12 @@ impl App {
                                     Message::EditorTargetPrecisionChanged,
                                 )
                                 .width(Length::Fixed(140.0)),
-                                text(format!("Precision: {precision_value:.2}")),
+                                text(format!("{precision_value:.2}")),
                                 TooltipPosition::Top,
                             )
                             .gap(6)
                             .padding(8)
-                            .style(|_| iced::widget::container::Style {
-                                text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
-                                background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
-                                border: Border {
-                                    color: Color::from_rgb8(0x68, 0x9d, 0xff),
-                                    width: 1.0,
-                                    radius: 8.0.into(),
-                                },
-                                shadow: Shadow::default(),
-                                snap: false,
-                            }),
+                            .style(|_| slider_tooltip_frame_style()),
                             text(format!("{precision_value:.2}")).size(12),
                         ]
                         .spacing(6)
@@ -378,22 +403,12 @@ impl App {
                                     Message::EditorTargetTimeoutMsChanged,
                                 )
                                 .width(Length::Fixed(140.0)),
-                                text(format!("Timeout: {} ms", self.editor_target_timeout_ms)),
+                                text(format!("{} ms", self.editor_target_timeout_ms)),
                                 TooltipPosition::Top,
                             )
                             .gap(6)
                             .padding(8)
-                            .style(|_| iced::widget::container::Style {
-                                text_color: Some(Color::from_rgb8(0xf2, 0xf6, 0xff)),
-                                background: Some(Background::Color(Color::from_rgb8(0x10, 0x14, 0x1b))),
-                                border: Border {
-                                    color: Color::from_rgb8(0x68, 0x9d, 0xff),
-                                    width: 1.0,
-                                    radius: 8.0.into(),
-                                },
-                                shadow: Shadow::default(),
-                                snap: false,
-                            }),
+                            .style(|_| slider_tooltip_frame_style()),
                             text(format!("{} ms", self.editor_target_timeout_ms)).size(12),
                         ]
                         .spacing(6)
@@ -659,8 +674,15 @@ impl App {
             iced::widget::column![
                 row![
                     text("Wait:").size(14),
-                    slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
-                        .width(Length::Fixed(180.0)),
+                    tooltip(
+                        slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
+                            .width(Length::Fixed(180.0)),
+                        text(format!("{} ms", self.editor_wait_ms)),
+                        TooltipPosition::Top,
+                    )
+                    .gap(6)
+                    .padding(8)
+                    .style(|_| slider_tooltip_frame_style()),
                     text(format!("{} ms", self.editor_wait_ms)).size(12),
                 ]
                 .spacing(8)
@@ -688,39 +710,60 @@ impl App {
                 text("Click detection thresholds").size(13),
                 row![
                     container(text("Click speed:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    slider(
-                        0..=100,
-                        self.editor_click_speed_ms,
-                        Message::EditorClickSpeedMsChanged,
+                    tooltip(
+                        slider(
+                            0..=100,
+                            self.editor_click_speed_ms,
+                            Message::EditorClickSpeedMsChanged,
+                        )
+                        .style(|_theme, _status| speed_slider_style(false))
+                        .width(Length::Fixed(180.0)),
+                        text(format!("{} ms", self.editor_click_speed_ms)),
+                        TooltipPosition::Top,
                     )
-                    .style(|_theme, _status| speed_slider_style(false))
-                    .width(Length::Fixed(180.0)),
+                    .gap(6)
+                    .padding(8)
+                    .style(|_| slider_tooltip_frame_style()),
                     text(format!("{} ms", self.editor_click_speed_ms)).size(12),
                 ]
                 .spacing(8)
                 .align_y(alignment::Alignment::Center),
                 row![
                     container(text("Pixel split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    slider(
-                        0..=20,
-                        self.editor_click_split_px,
-                        Message::EditorClickSplitPxChanged,
+                    tooltip(
+                        slider(
+                            0..=20,
+                            self.editor_click_split_px,
+                            Message::EditorClickSplitPxChanged,
+                        )
+                        .style(|_theme, _status| speed_slider_style(false))
+                        .width(Length::Fixed(180.0)),
+                        text(format!("{} px", self.editor_click_split_px)),
+                        TooltipPosition::Top,
                     )
-                    .style(|_theme, _status| speed_slider_style(false))
-                    .width(Length::Fixed(180.0)),
+                    .gap(6)
+                    .padding(8)
+                    .style(|_| slider_tooltip_frame_style()),
                     text(format!("{} px", self.editor_click_split_px)).size(12),
                 ]
                 .spacing(8)
                 .align_y(alignment::Alignment::Center),
                 row![
                     container(text("Hold split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    slider(
-                        0..=100,
-                        self.editor_click_max_hold_ms,
-                        Message::EditorClickMaxHoldMsChanged,
+                    tooltip(
+                        slider(
+                            0..=100,
+                            self.editor_click_max_hold_ms,
+                            Message::EditorClickMaxHoldMsChanged,
+                        )
+                        .style(|_theme, _status| speed_slider_style(false))
+                        .width(Length::Fixed(180.0)),
+                        text(format!("{} ms", self.editor_click_max_hold_ms)),
+                        TooltipPosition::Top,
                     )
-                    .style(|_theme, _status| speed_slider_style(false))
-                    .width(Length::Fixed(180.0)),
+                    .gap(6)
+                    .padding(8)
+                    .style(|_| slider_tooltip_frame_style()),
                     text(format!("{} ms", self.editor_click_max_hold_ms)).size(12),
                 ]
                 .spacing(8)

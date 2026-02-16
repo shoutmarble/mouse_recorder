@@ -51,11 +51,11 @@ impl App {
                 Ok(Task::none())
             }
             Message::EditorMouseMoveSpeedMsChanged(ms) => {
-                self.editor_mouse_move_speed_ms = ms.clamp(0, 500);
+                self.editor_mouse_move_speed_ms = ms.clamp(5, 50);
                 Ok(Task::none())
             }
             Message::MousePathMinDeltaPxChanged(px) => {
-                self.recorder_mouse_path_min_delta_px = px.clamp(0, 20);
+                self.recorder_mouse_path_min_delta_px = px.clamp(0, 10);
                 Ok(Task::none())
             }
             Message::EditorClickSplitPxChanged(px) => {
@@ -173,6 +173,7 @@ impl App {
                                 if let Some(cur) = self.events.get_mut(index) {
                                     cur.kind = RecordedEventKind::Move { x, y };
                                     cur.pos = Some((x, y));
+                                    cur.click_meta = click_meta.clone();
                                 }
                                 self.status = format!("Updated move at row {}", index);
                                 return Ok(Task::none());
@@ -187,6 +188,7 @@ impl App {
                                 if let Some(cur) = self.events.get_mut(index) {
                                     cur.kind = RecordedEventKind::Moves { points };
                                     cur.pos = Some((x, y));
+                                    cur.click_meta = click_meta.clone();
                                 }
                                 self.status = format!("Updated moves at row {}", index);
                                 return Ok(Task::none());
@@ -435,7 +437,7 @@ impl App {
                         self.editor_middle_mode = meta.middle_mode;
                         self.editor_wait_ms = meta.wait_ms;
                         self.editor_click_speed_ms = meta.click_speed_ms.min(100);
-                        self.editor_mouse_move_speed_ms = meta.mouse_move_speed_ms.min(500);
+                        self.editor_mouse_move_speed_ms = meta.mouse_move_speed_ms.clamp(5, 50);
                         self.editor_target_precision_percent =
                             (meta.target_precision.clamp(0.5, 1.0) * 100.0).round() as u16;
                         self.editor_target_timeout_ms = meta.target_timeout_ms.clamp(200, 10000) as u16;
@@ -484,17 +486,47 @@ impl App {
                     return Ok(Task::none());
                 }
 
-                self.events.remove(index);
+                let removed_count = if matches!(self.events[index].kind, RecordedEventKind::Move { .. }) {
+                    let mut start = index;
+                    while start > 0
+                        && matches!(self.events[start - 1].kind, RecordedEventKind::Move { .. })
+                    {
+                        start -= 1;
+                    }
+
+                    let mut end = index;
+                    while end + 1 < self.events.len()
+                        && matches!(self.events[end + 1].kind, RecordedEventKind::Move { .. })
+                    {
+                        end += 1;
+                    }
+
+                    let count = end - start + 1;
+                    self.events.drain(start..=end);
+                    count
+                } else {
+                    self.events.remove(index);
+                    1
+                };
 
                 if self.events.is_empty() {
                     self.selected_index = None;
                 } else {
                     let next_index = index.min(self.events.len() - 1);
                     self.selected_index = Some(next_index);
+                    self.status = if removed_count > 1 {
+                        format!("Deleted MOVES row ({} points)", removed_count)
+                    } else {
+                        format!("Deleted row {}", index)
+                    };
                     return Ok(self.update(Message::SelectRow(next_index)));
                 }
 
-                self.status = format!("Deleted row {}", index);
+                self.status = if removed_count > 1 {
+                    format!("Deleted MOVES row ({} points)", removed_count)
+                } else {
+                    format!("Deleted row {}", index)
+                };
                 Ok(Task::none())
             }
             _ => Err(message),

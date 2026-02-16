@@ -66,6 +66,7 @@ impl App {
                     self.playback_progress = None;
                     self.playback_active_index = None;
                     self.playback_last_scrolled_index = None;
+                    self.playback_progress_row_map.clear();
                     self.mode = Mode::Idle;
                     self.status = "Playback stopped.".to_string();
                 } else if self.mode == Mode::Recording {
@@ -88,7 +89,7 @@ impl App {
                 }
 
                 self.mode = Mode::Playing;
-                self.status = "Playing...".to_string();
+                self.status = "Playing (materialized MOVES)...".to_string();
                 self.playback_active_index = None;
                 self.playback_last_scrolled_index = None;
 
@@ -98,7 +99,8 @@ impl App {
                 let progress = Arc::new(AtomicUsize::new(usize::MAX));
                 self.playback_progress = Some(progress.clone());
 
-                let events = self.events.clone();
+                let (events, row_map) = self.materialize_moves_grouped_events_with_row_map();
+                self.playback_progress_row_map = row_map;
                 Ok(Task::perform(
                     async move { playback(events, cancel, progress).map_err(|e| e.to_string()) },
                     Message::PlaybackFinished,
@@ -110,6 +112,7 @@ impl App {
                 self.playback_progress = None;
                 self.playback_active_index = None;
                 self.playback_last_scrolled_index = None;
+                self.playback_progress_row_map.clear();
                 match result {
                     Ok(()) => self.status = "Playback finished".to_string(),
                     Err(err) => self.status = format!("Playback error: {err}"),
@@ -331,7 +334,12 @@ impl App {
                         let new_active = if idx == usize::MAX {
                             None
                         } else {
-                            Some(idx)
+                            Some(
+                                self.playback_progress_row_map
+                                    .get(idx)
+                                    .copied()
+                                    .unwrap_or(idx),
+                            )
                         };
 
                         if new_active != self.playback_active_index {

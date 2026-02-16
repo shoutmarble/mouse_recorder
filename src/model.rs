@@ -138,7 +138,7 @@ impl Default for ClickListMeta {
             middle_mode: ClickEdgeMode::Auto,
             wait_ms: 20,
             click_speed_ms: 20,
-            mouse_move_speed_ms: 150,
+            mouse_move_speed_ms: 20,
             use_find_image: false,
             target_precision: 0.90,
             target_timeout_ms: 2000,

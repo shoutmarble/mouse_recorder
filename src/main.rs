@@ -106,6 +106,7 @@ struct App {
     playback_progress: Option<Arc<AtomicUsize>>,
     playback_active_index: Option<usize>,
     playback_last_scrolled_index: Option<usize>,
+    playback_progress_row_map: Vec<usize>,
 
     window_height_px: f32,
 
@@ -140,7 +141,7 @@ impl Default for App {
             editor_y_text: "0".to_string(),
             editor_wait_ms: 20,
             editor_click_speed_ms: 20,
-            editor_mouse_move_speed_ms: 150,
+            editor_mouse_move_speed_ms: 20,
             editor_click_split_px: 10,
             editor_click_max_hold_ms: 50,
             editor_target_precision_percent: 90,
@@ -170,6 +171,7 @@ impl Default for App {
             playback_progress: None,
             playback_active_index: None,
             playback_last_scrolled_index: None,
+            playback_progress_row_map: Vec::new(),
             window_height_px: 1162.0,
             recorder_state: Arc::new(Mutex::new(RecorderState::default())),
         }
@@ -198,11 +200,8 @@ impl App {
     }
 
     fn default_mouse_move_speed_for_mode(mode: ClickEdgeMode) -> u16 {
-        if mode == ClickEdgeMode::Up {
-            250
-        } else {
-            150
-        }
+        let _ = mode;
+        20
     }
 
     fn sync_editor_mouse_move_speed_default(&mut self) {

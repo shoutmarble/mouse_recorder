@@ -9,6 +9,14 @@ pub(crate) fn format_event_with_prev(
         format!("wait {} ms", wait_ms)
     };
 
+    let move_value = |meta: Option<&ClickListMeta>| -> String {
+        if let Some(m) = meta {
+            format!("move {} ms | {}", m.mouse_move_speed_ms, wait_value(meta))
+        } else {
+            wait_value(meta)
+        }
+    };
+
     let source_from_meta = |meta: Option<&ClickListMeta>, pos: Option<(i32, i32)>| {
         if meta.map(|m| m.use_find_image).unwrap_or(false) {
             "TARGET".to_string()
@@ -45,7 +53,7 @@ pub(crate) fn format_event_with_prev(
             let _ = prev_pos.unwrap_or((*x, *y));
             (
                 "MOVE|(X,Y)".to_string(),
-                wait_value(ev.click_meta.as_ref()),
+                move_value(ev.click_meta.as_ref()),
                 Some((*x, *y)),
             )
         }
@@ -53,7 +61,7 @@ pub(crate) fn format_event_with_prev(
             let last = points.last().copied().or(prev_pos);
             (
                 "MOVES|(X,Y)".to_string(),
-                format!("{} pts | {}", points.len(), wait_value(ev.click_meta.as_ref())),
+                format!("{} pts | {}", points.len(), move_value(ev.click_meta.as_ref())),
                 last,
             )
         }
