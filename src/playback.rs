@@ -73,12 +73,12 @@ pub(crate) fn playback(
             .map(|m| m.click_speed_ms as u64)
             .unwrap_or(20)
             .min(100);
-        let default_move_speed_ms = 20;
+        let default_move_speed_ms = 25;
         let mouse_move_speed_ms = click_meta
             .as_ref()
             .map(|m| m.mouse_move_speed_ms as u64)
             .unwrap_or(default_move_speed_ms)
-            .clamp(5, 50);
+            .clamp(5, 500);
 
         if wait_ms > 0 && !matches!(&kind, RecordedEventKind::Wait { .. }) {
             sleep_with_cancel(&cancel, wait_ms)?;

@@ -305,7 +305,7 @@ impl App {
             middle_mode: ClickEdgeMode::Auto,
             wait_ms: self.recorder_wait_ms as u16,
             click_speed_ms: self.editor_click_speed_ms.clamp(0, 100),
-            mouse_move_speed_ms: self.editor_mouse_move_speed_ms.clamp(5, 50),
+            mouse_move_speed_ms: self.editor_mouse_move_speed_ms.clamp(5, 500),
             use_find_image: self.editor_use_find_image,
             target_precision: (self.editor_target_precision_percent as f32 / 100.0).clamp(0.5, 1.0),
             target_timeout_ms: (self.editor_target_timeout_ms as u64).clamp(200, 10000),

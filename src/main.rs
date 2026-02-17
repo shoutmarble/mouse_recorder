@@ -127,7 +127,7 @@ impl Default for App {
             current_right_down: false,
             current_middle_down: false,
             esc_was_down: false,
-            recorder_wait_ms: 10,
+            recorder_wait_ms: 20,
             recorder_mouse_path_enabled: false,
             recorder_mouse_path_min_delta_px: 0,
 
@@ -141,7 +141,7 @@ impl Default for App {
             editor_y_text: "0".to_string(),
             editor_wait_ms: 20,
             editor_click_speed_ms: 20,
-            editor_mouse_move_speed_ms: 20,
+            editor_mouse_move_speed_ms: 25,
             editor_click_split_px: 10,
             editor_click_max_hold_ms: 50,
             editor_target_precision_percent: 90,
@@ -201,7 +201,7 @@ impl App {
 
     fn default_mouse_move_speed_for_mode(mode: ClickEdgeMode) -> u16 {
         let _ = mode;
-        20
+        25
     }
 
     fn sync_editor_mouse_move_speed_default(&mut self) {

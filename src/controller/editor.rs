@@ -34,6 +34,7 @@ impl App {
             }
             Message::EditorWaitMsChanged(ms) => {
                 self.editor_wait_ms = ms.clamp(0, 300);
+                self.recorder_wait_ms = self.editor_wait_ms as u64;
                 Ok(Task::none())
             }
             Message::EditorClickSpeedMsChanged(ms) => {
@@ -51,7 +52,8 @@ impl App {
                 Ok(Task::none())
             }
             Message::EditorMouseMoveSpeedMsChanged(ms) => {
-                self.editor_mouse_move_speed_ms = ms.clamp(5, 50);
+                let snapped = ((ms.saturating_add(2)) / 5) * 5;
+                self.editor_mouse_move_speed_ms = snapped.clamp(5, 500);
                 Ok(Task::none())
             }
             Message::MousePathMinDeltaPxChanged(px) => {
@@ -166,6 +168,32 @@ impl App {
 
                 if let Some(index) = self.selected_index {
                     let selected_kind = self.events.get(index).map(|ev| ev.kind.clone());
+                    let preserve_selected_patch = matches!(
+                        selected_kind.as_ref(),
+                        Some(
+                            RecordedEventKind::LeftDown { .. }
+                                | RecordedEventKind::LeftUp { .. }
+                                | RecordedEventKind::LeftClick { .. }
+                                | RecordedEventKind::RightDown { .. }
+                                | RecordedEventKind::RightUp { .. }
+                                | RecordedEventKind::RightClick { .. }
+                                | RecordedEventKind::MiddleDown { .. }
+                                | RecordedEventKind::MiddleUp { .. }
+                                | RecordedEventKind::MiddleClick { .. }
+                        )
+                    );
+                    let selected_patch = selected_kind.as_ref().and_then(|k| match k {
+                        RecordedEventKind::LeftDown { patch_png_base64 }
+                        | RecordedEventKind::LeftUp { patch_png_base64 }
+                        | RecordedEventKind::LeftClick { patch_png_base64 }
+                        | RecordedEventKind::RightDown { patch_png_base64 }
+                        | RecordedEventKind::RightUp { patch_png_base64 }
+                        | RecordedEventKind::RightClick { patch_png_base64 }
+                        | RecordedEventKind::MiddleDown { patch_png_base64 }
+                        | RecordedEventKind::MiddleUp { patch_png_base64 }
+                        | RecordedEventKind::MiddleClick { patch_png_base64 } => patch_png_base64.clone(),
+                        _ => None,
+                    });
 
                     if let Some(ev) = self.events.get(index).cloned() {
                         match ev.kind {
@@ -223,6 +251,41 @@ impl App {
                     let Some(replacement_kind) = replacement_kind else {
                         self.status = "No compatible action to apply".to_string();
                         return Ok(Task::none());
+                    };
+
+                    let replacement_kind = if preserve_selected_patch {
+                        match replacement_kind {
+                            RecordedEventKind::LeftDown { .. } => RecordedEventKind::LeftDown {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::LeftUp { .. } => RecordedEventKind::LeftUp {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::LeftClick { .. } => RecordedEventKind::LeftClick {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::RightDown { .. } => RecordedEventKind::RightDown {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::RightUp { .. } => RecordedEventKind::RightUp {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::RightClick { .. } => RecordedEventKind::RightClick {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::MiddleDown { .. } => RecordedEventKind::MiddleDown {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::MiddleUp { .. } => RecordedEventKind::MiddleUp {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            RecordedEventKind::MiddleClick { .. } => RecordedEventKind::MiddleClick {
+                                patch_png_base64: selected_patch.clone(),
+                            },
+                            other => other,
+                        }
+                    } else {
+                        replacement_kind
                     };
 
                     if let Some(cur) = self.events.get_mut(index) {
@@ -437,7 +500,7 @@ impl App {
                         self.editor_middle_mode = meta.middle_mode;
                         self.editor_wait_ms = meta.wait_ms;
                         self.editor_click_speed_ms = meta.click_speed_ms.min(100);
-                        self.editor_mouse_move_speed_ms = meta.mouse_move_speed_ms.clamp(5, 50);
+                        self.editor_mouse_move_speed_ms = meta.mouse_move_speed_ms.clamp(5, 500);
                         self.editor_target_precision_percent =
                             (meta.target_precision.clamp(0.5, 1.0) * 100.0).round() as u16;
                         self.editor_target_timeout_ms = meta.target_timeout_ms.clamp(200, 10000) as u16;

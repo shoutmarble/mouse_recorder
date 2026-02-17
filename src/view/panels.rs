@@ -83,22 +83,31 @@ impl App {
         .spacing(8)
         .align_y(alignment::Alignment::Center);
 
-        let speed_row = row![
-            text("Mouse move speed:").size(14).width(Length::Fixed(140.0)),
-            tooltip(
-                slider(
-                    5..=50,
-                    self.editor_mouse_move_speed_ms,
-                    Message::EditorMouseMoveSpeedMsChanged,
+        let speed_label_row = row![
+            text("Mouse Move Speed:").size(14),
+            container(iced::widget::Space::new()).width(Length::Fill),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        let speed_slider_row = row![
+            container(
+                tooltip(
+                    slider(
+                        5..=500,
+                        self.editor_mouse_move_speed_ms,
+                        Message::EditorMouseMoveSpeedMsChanged,
+                    )
+                    .style(|_theme, _status| speed_slider_style(false))
+                    .width(Length::Fill),
+                    text(format!("{} ms", self.editor_mouse_move_speed_ms)),
+                    TooltipPosition::Top,
                 )
-                .style(|_theme, _status| speed_slider_style(false))
-                .width(Length::Fixed(220.0)),
-                text(format!("{} ms", self.editor_mouse_move_speed_ms)),
-                TooltipPosition::Top,
+                .gap(6)
+                .padding(8)
+                .style(|_| slider_tooltip_frame_style()),
             )
-            .gap(6)
-            .padding(8)
-            .style(|_| slider_tooltip_frame_style()),
+            .width(Length::Fill),
             text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
         ]
         .spacing(8)
@@ -126,7 +135,7 @@ impl App {
         .align_y(alignment::Alignment::Center);
 
         let mouse_path_main_pane: Element<Message> = container(
-            iced::widget::column![toggle_row, speed_row]
+            iced::widget::column![toggle_row]
                 .spacing(8)
                 .width(Length::Fill),
         )
@@ -161,8 +170,28 @@ impl App {
             })
             .into();
 
+        let speed_pane: Element<Message> = container(
+            iced::widget::column![speed_label_row, speed_slider_row]
+                .spacing(6)
+                .width(Length::Fill),
+        )
+        .padding(8)
+        .width(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x12, 0x18, 0x20))),
+            border: Border {
+                color: Color::from_rgb8(0x5d, 0x6d, 0x82),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
         container(
-            iced::widget::column![mouse_path_main_pane, sampling_pane]
+            iced::widget::column![mouse_path_main_pane, speed_pane, sampling_pane]
                 .spacing(8)
                 .width(Length::Fill),
         )

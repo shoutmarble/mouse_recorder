@@ -27,6 +27,8 @@ impl App {
                     return Ok(Task::none());
                 }
 
+                self.recorder_wait_ms = self.editor_wait_ms as u64;
+
                 self.mode = Mode::Recording;
                 self.events.clear();
                 self.status = "Recording...".to_string();
