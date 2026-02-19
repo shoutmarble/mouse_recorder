@@ -52,7 +52,7 @@ pub(crate) fn format_event_with_prev(
         RecordedEventKind::Move { x, y } => {
             let _ = prev_pos.unwrap_or((*x, *y));
             (
-                "MOVE|(X,Y)".to_string(),
+                format!("MOVE|({x},{y})"),
                 move_value(ev.click_meta.as_ref()),
                 Some((*x, *y)),
             )

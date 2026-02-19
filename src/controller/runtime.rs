@@ -16,7 +16,10 @@ impl App {
                 };
                 Ok(Task::none())
             }
-            Message::WindowResized(_w, h) => {
+            Message::WindowResized(w, h) => {
+                if w.is_finite() {
+                    self.window_width_px = w.max(640.0);
+                }
                 if h.is_finite() {
                     self.window_height_px = h.max(240.0);
                 }
@@ -116,8 +119,8 @@ impl App {
                 self.playback_last_scrolled_index = None;
                 self.playback_progress_row_map.clear();
                 match result {
-                    Ok(()) => self.status = "Playback finished".to_string(),
-                    Err(err) => self.status = format!("Playback error: {err}"),
+                    Ok(()) => self.status = "Playback finished.".to_string(),
+                    Err(err) => self.status = format!("Playback failed: {err}"),
                 }
                 Ok(Task::none())
             }
@@ -126,7 +129,7 @@ impl App {
                     return Ok(Task::none());
                 }
                 self.events.clear();
-                self.status = "Cleared".to_string();
+                self.status = "Cleared all events.".to_string();
                 Ok(Task::none())
             }
             Message::SetMousePathEnabled(enabled) => {
@@ -422,7 +425,7 @@ impl App {
                         if self.editor_capture_armed {
                             disarm_get_capture_hook();
                             self.editor_capture_armed = false;
-                            self.status = "GET (X,Y) cancelled".to_string();
+                            self.status = "GET (X,Y) canceled.".to_string();
                             return Ok(Task::none());
                         }
 
@@ -467,7 +470,7 @@ impl App {
             Message::SaveToFile => {
                 let path = self.file_path.trim().to_string();
                 if path.is_empty() {
-                    self.status = "Provide a file path".to_string();
+                    self.status = "Please provide a file path.".to_string();
                     return Ok(Task::none());
                 }
                 let events = self.materialize_moves_grouped_events();
@@ -482,13 +485,13 @@ impl App {
             }
             Message::LoadFromFile => {
                 if self.mode == Mode::Recording || self.mode == Mode::Playing {
-                    self.status = "Stop recording/playback before loading".to_string();
+                    self.status = "Stop recording or playback before loading.".to_string();
                     return Ok(Task::none());
                 }
 
                 let path = self.file_path.trim().to_string();
                 if path.is_empty() {
-                    self.status = "Provide a file path".to_string();
+                    self.status = "Please provide a file path.".to_string();
                     return Ok(Task::none());
                 }
                 self.status = format!("Loading from {path}...");
@@ -505,7 +508,7 @@ impl App {
                     Ok(FileOpResult::Loaded(events)) => {
                         let count = events.len();
                         self.events = events;
-                        self.status = format!("Loaded {count} events");
+                        self.status = format!("Loaded {count} events.");
                     }
                     Err(err) => self.status = err,
                 }

@@ -163,6 +163,7 @@ impl App {
         .into();
 
         let modes: Element<Message> = container(modes_row)
+            .width(Length::Fill)
             .style(move |_| iced::widget::container::Style {
                 text_color: if enabled {
                     None
@@ -192,6 +193,7 @@ impl App {
         row![target_cell, modes]
             .align_y(alignment::Alignment::Center)
             .spacing(6)
+            .width(Length::Fill)
             .into()
     }
 }

@@ -1,3 +1,5 @@
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+
 use iced::widget::{
     button, checkbox, column, container, image, mouse_area, pick_list, radio, row, scrollable, stack, text,
     slider, svg, text_input, toggler, tooltip,
@@ -39,7 +41,7 @@ fn main() -> iced::Result {
         .scale_factor(App::ui_scale_factor)
         .window(iced::window::Settings {
             // Roughly: 1/2 width and 2/3 height of a typical 1024x768 default.
-            size: iced::Size::new(1040.0, 1162.0),
+            size: iced::Size::new(1040.0, 1082.0),
             ..Default::default()
         })
         .subscription(App::subscription)
@@ -108,6 +110,7 @@ struct App {
     playback_last_scrolled_index: Option<usize>,
     playback_progress_row_map: Vec<usize>,
 
+    window_width_px: f32,
     window_height_px: f32,
 
     // Shared recorder state for the background poller
@@ -172,7 +175,8 @@ impl Default for App {
             playback_active_index: None,
             playback_last_scrolled_index: None,
             playback_progress_row_map: Vec::new(),
-            window_height_px: 1162.0,
+            window_width_px: 1040.0,
+            window_height_px: 1082.0,
             recorder_state: Arc::new(Mutex::new(RecorderState::default())),
         }
     }
@@ -219,6 +223,10 @@ impl App {
 
         let rows = ((window_h_logical - reserved_h_logical) / row_h_logical).floor();
         rows.max(3.0) as usize
+    }
+
+    fn right_panel_width_px(&self) -> f32 {
+        (self.window_width_px * 0.46).clamp(520.0, 760.0)
     }
 }
 

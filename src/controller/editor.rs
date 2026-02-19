@@ -82,7 +82,7 @@ impl App {
             }
             Message::EditorStartGetXY => {
                 if self.mode != Mode::Idle {
-                    self.status = "Stop recording/playback first".to_string();
+                    self.status = "Stop recording or playback first.".to_string();
                     return Ok(Task::none());
                 }
 
@@ -95,31 +95,31 @@ impl App {
                 #[cfg(windows)]
                 {
                     if let Err(err) = ensure_get_capture_hook_thread() {
-                        self.status = format!("GET capture unavailable: {err}");
+                        self.status = format!("GET capture failed: {err}");
                         return Ok(Task::none());
                     }
 
                     arm_get_capture_hook();
                     self.editor_capture_armed = true;
                     self.editor_last_capture_button = None;
-                    self.status = "GET (X,Y) armed: click Left/Right/Middle to set (ESC cancels)".to_string();
+                    self.status = "GET (X,Y) armed: click Left, Right, or Middle to set coordinates (ESC cancels).".to_string();
                 }
 
                 #[cfg(not(windows))]
                 {
-                    self.status = "GET (X,Y) capture is Windows-only right now".to_string();
+                    self.status = "GET (X,Y) capture is currently Windows-only.".to_string();
                 }
 
                 Ok(Task::none())
             }
             Message::EditorJumpToXY => {
                 if self.mode != Mode::Idle {
-                    self.status = "Stop recording/playback first".to_string();
+                    self.status = "Stop recording or playback first.".to_string();
                     return Ok(Task::none());
                 }
 
                 let Some((x, y)) = self.parse_editor_xy() else {
-                    self.status = "Invalid X/Y for jump".to_string();
+                    self.status = "Invalid X/Y coordinates for jump.".to_string();
                     return Ok(Task::none());
                 };
 
@@ -136,18 +136,18 @@ impl App {
             }
             Message::EditorInsertOrApply => {
                 if self.mode != Mode::Idle {
-                    self.status = "Stop recording/playback first".to_string();
+                    self.status = "Stop recording or playback first.".to_string();
                     return Ok(Task::none());
                 }
 
                 let Some((x, y)) = self.parse_editor_xy() else {
-                    self.status = "Invalid X/Y".to_string();
+                    self.status = "Invalid X/Y coordinates.".to_string();
                     return Ok(Task::none());
                 };
 
                 let patch = if self.editor_use_find_image {
                     let Some(existing_patch) = self.editor_static_preview_patch_b64.clone() else {
-                        self.status = "Press GET (X,Y) to capture/select a target image first".to_string();
+                        self.status = "Press GET (X,Y) to capture or select a target image first.".to_string();
                         return Ok(Task::none());
                     };
                     Some(existing_patch)
@@ -157,9 +157,9 @@ impl App {
                 let kinds = self.event_kinds_from_editor_modes(patch);
                 if kinds.is_empty() {
                     self.status = if self.editor_use_find_image {
-                        "Capture GET target first".to_string()
+                        "Capture a GET target first.".to_string()
                     } else {
-                        "Choose at least one click mode".to_string()
+                        "Choose at least one click mode.".to_string()
                     };
                     return Ok(Task::none());
                 }
@@ -307,14 +307,14 @@ impl App {
                         });
                     }
                     self.selected_index = Some(insert_at);
-                    self.status = "Inserted click row".to_string();
+                    self.status = "Inserted click row.".to_string();
                 }
 
                 Ok(Task::none())
             }
             Message::EditorInsertBelowSelected => {
                 if self.mode != Mode::Idle {
-                    self.status = "Stop recording/playback first".to_string();
+                    self.status = "Stop recording or playback first.".to_string();
                     return Ok(Task::none());
                 }
 
@@ -324,13 +324,13 @@ impl App {
                 };
 
                 let Some((x, y)) = self.parse_editor_xy() else {
-                    self.status = "Invalid X/Y".to_string();
+                    self.status = "Invalid X/Y coordinates.".to_string();
                     return Ok(Task::none());
                 };
 
                 let patch = if self.editor_use_find_image {
                     let Some(existing_patch) = self.editor_static_preview_patch_b64.clone() else {
-                        self.status = "Press GET (X,Y) to capture/select a target image first".to_string();
+                        self.status = "Press GET (X,Y) to capture or select a target image first.".to_string();
                         return Ok(Task::none());
                     };
                     Some(existing_patch)
@@ -340,9 +340,9 @@ impl App {
                 let kinds = self.event_kinds_from_editor_modes(patch);
                 if kinds.is_empty() {
                     self.status = if self.editor_use_find_image {
-                        "Capture GET target first".to_string()
+                        "Capture a GET target first.".to_string()
                     } else {
-                        "Choose at least one click mode".to_string()
+                        "Choose at least one click mode.".to_string()
                     };
                     return Ok(Task::none());
                 }
@@ -368,6 +368,45 @@ impl App {
                 self.selected_index = Some(insert_at);
                 self.status = format!("Inserted {} row(s) below selected (multi-row)", inserted);
                 Ok(Task::none())
+            }
+            Message::RowJump(index) => {
+                if self.mode != Mode::Idle {
+                    self.status = "Stop recording or playback first.".to_string();
+                    return Ok(Task::none());
+                }
+                if index >= self.events.len() {
+                    self.status = "Selected row no longer exists".to_string();
+                    self.selected_index = None;
+                    return Ok(Task::none());
+                }
+                let _ = self.update(Message::SelectRow(index));
+                Ok(self.update(Message::EditorJumpToXY))
+            }
+            Message::RowClone(index) => {
+                if self.mode != Mode::Idle {
+                    self.status = "Stop recording or playback first.".to_string();
+                    return Ok(Task::none());
+                }
+                if index >= self.events.len() {
+                    self.status = "Selected row no longer exists".to_string();
+                    self.selected_index = None;
+                    return Ok(Task::none());
+                }
+                let _ = self.update(Message::SelectRow(index));
+                Ok(self.update(Message::EditorInsertBelowSelected))
+            }
+            Message::RowDelete(index) => {
+                if self.mode != Mode::Idle {
+                    self.status = "Stop recording or playback first.".to_string();
+                    return Ok(Task::none());
+                }
+                if index >= self.events.len() {
+                    self.status = "Selected row no longer exists".to_string();
+                    self.selected_index = None;
+                    return Ok(Task::none());
+                }
+                let _ = self.update(Message::SelectRow(index));
+                Ok(self.update(Message::ClearSelection))
             }
             Message::SelectRow(index) => {
                 self.selected_index = Some(index);
@@ -534,7 +573,7 @@ impl App {
             }
             Message::ClearSelection => {
                 if self.mode != Mode::Idle {
-                    self.status = "Stop recording/playback first".to_string();
+                    self.status = "Stop recording or playback first.".to_string();
                     return Ok(Task::none());
                 }
 

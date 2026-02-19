@@ -62,6 +62,10 @@ pub(crate) enum Message {
     EditorInsertOrApply,
     EditorInsertBelowSelected,
 
+    RowJump(usize),
+    RowClone(usize),
+    RowDelete(usize),
+
     SelectRow(usize),
     ClearSelection,
 

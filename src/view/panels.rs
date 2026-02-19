@@ -44,6 +44,8 @@ fn slider_tooltip_frame_style() -> iced::widget::container::Style {
 
 impl App {
     pub(crate) fn view_mouse_path_panel(&self) -> Element<'_, Message> {
+        const VALUE_COL_W: f32 = 62.0;
+
         let path_state_badge: Element<Message> = container(
             text(if self.recorder_mouse_path_enabled { "ON" } else { "OFF" }).size(11),
         )
@@ -74,23 +76,18 @@ impl App {
         .into();
 
         let toggle_row = row![
-            text("Mouse Path:").size(14),
+            text("Mouse Path:").size(14).width(Length::Fixed(140.0)),
             path_state_badge,
             toggler(self.recorder_mouse_path_enabled)
                 .on_toggle(Message::SetMousePathEnabled),
             container(iced::widget::Space::new()).width(Length::Fill),
         ]
         .spacing(8)
-        .align_y(alignment::Alignment::Center);
+        .align_y(alignment::Alignment::Center)
+        .width(Length::Fill);
 
-        let speed_label_row = row![
-            text("Mouse Move Speed:").size(14),
-            container(iced::widget::Space::new()).width(Length::Fill),
-        ]
-        .spacing(8)
-        .align_y(alignment::Alignment::Center);
-
-        let speed_slider_row = row![
+        let speed_row = row![
+            text("Mouse move speed:").size(14).width(Length::Fixed(140.0)),
             container(
                 tooltip(
                     slider(
@@ -108,31 +105,40 @@ impl App {
                 .style(|_| slider_tooltip_frame_style()),
             )
             .width(Length::Fill),
-            text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12),
+            container(text(format!("{} ms", self.editor_mouse_move_speed_ms)).size(12))
+                .width(Length::Fixed(VALUE_COL_W))
+                .align_x(alignment::Horizontal::Right),
         ]
         .spacing(8)
-        .align_y(alignment::Alignment::Center);
+        .align_y(alignment::Alignment::Center)
+        .width(Length::Fill);
 
         let path_sampling_row = row![
             text("Path sampling:").size(14).width(Length::Fixed(140.0)),
-            tooltip(
-                slider(
-                    0..=10,
-                    self.recorder_mouse_path_min_delta_px,
-                    Message::MousePathMinDeltaPxChanged,
+            container(
+                tooltip(
+                    slider(
+                        0..=10,
+                        self.recorder_mouse_path_min_delta_px,
+                        Message::MousePathMinDeltaPxChanged,
+                    )
+                    .style(|_theme, _status| speed_slider_style(false))
+                    .width(Length::Fill),
+                    text(format!("{} px", self.recorder_mouse_path_min_delta_px)),
+                    TooltipPosition::Top,
                 )
-                .style(|_theme, _status| speed_slider_style(false))
-                .width(Length::Fixed(220.0)),
-                text(format!("{} px", self.recorder_mouse_path_min_delta_px)),
-                TooltipPosition::Top,
+                .gap(6)
+                .padding(8)
+                .style(|_| slider_tooltip_frame_style()),
             )
-            .gap(6)
-            .padding(8)
-            .style(|_| slider_tooltip_frame_style()),
-            text(format!("{} px", self.recorder_mouse_path_min_delta_px)).size(12),
+            .width(Length::Fill),
+            container(text(format!("{} px", self.recorder_mouse_path_min_delta_px)).size(12))
+                .width(Length::Fixed(VALUE_COL_W))
+                .align_x(alignment::Horizontal::Right),
         ]
         .spacing(8)
-        .align_y(alignment::Alignment::Center);
+        .align_y(alignment::Alignment::Center)
+        .width(Length::Fill);
 
         let mouse_path_main_pane: Element<Message> = container(
             iced::widget::column![toggle_row]
@@ -170,11 +176,7 @@ impl App {
             })
             .into();
 
-        let speed_pane: Element<Message> = container(
-            iced::widget::column![speed_label_row, speed_slider_row]
-                .spacing(6)
-                .width(Length::Fill),
-        )
+        let speed_pane: Element<Message> = container(speed_row)
         .padding(8)
         .width(Length::Fill)
         .style(|_| iced::widget::container::Style {
@@ -270,6 +272,7 @@ impl App {
         const PREVIEW_INNER_RADIUS: f32 = 0.0;
         const PREVIEW_TITLE_H: f32 = 34.0;
         const TARGET_COL_W: f32 = 140.0;
+        const VALUE_COL_W: f32 = 62.0;
 
         let right_preview_border = if self.editor_capture_armed {
             Color::from_rgb8(0xe5, 0x39, 0x35)
@@ -328,7 +331,7 @@ impl App {
 
             container(
                 iced::widget::column![xy_row, image_row]
-                    .spacing(6)
+                    .spacing(8)
                     .align_x(alignment::Alignment::Start),
             )
             .padding(8)
@@ -350,12 +353,12 @@ impl App {
             let precision_value = self.editor_target_precision_percent as f32 / 100.0;
 
             iced::widget::column![
-                text("Image match").size(12),
+                text("Image match").size(12).color(Color::from_rgb8(0xc0, 0xca, 0xd6)),
                 container(
                     iced::widget::column![
                         tooltip(
                             text("Precision").size(12),
-                            "Match confidence threshold (higher = stricter, fewer false positives)",
+                            "Sets the match confidence threshold. Higher values are stricter and reduce false positives.",
                             TooltipPosition::Top,
                         )
                         .gap(6)
@@ -372,25 +375,31 @@ impl App {
                             snap: false,
                         }),
                         row![
-                            tooltip(
-                                slider(
-                                    50..=100,
-                                    self.editor_target_precision_percent,
-                                    Message::EditorTargetPrecisionChanged,
+                            container(
+                                tooltip(
+                                    slider(
+                                        50..=100,
+                                        self.editor_target_precision_percent,
+                                        Message::EditorTargetPrecisionChanged,
+                                    )
+                                    .width(Length::Fill),
+                                    text(format!("{precision_value:.2}")),
+                                    TooltipPosition::Top,
                                 )
-                                .width(Length::Fixed(140.0)),
-                                text(format!("{precision_value:.2}")),
-                                TooltipPosition::Top,
+                                .gap(6)
+                                .padding(8)
+                                .style(|_| slider_tooltip_frame_style()),
                             )
-                            .gap(6)
-                            .padding(8)
-                            .style(|_| slider_tooltip_frame_style()),
-                            text(format!("{precision_value:.2}")).size(12),
+                            .width(Length::Fill),
+                            container(text(format!("{precision_value:.2}")).size(12))
+                                .width(Length::Fixed(VALUE_COL_W))
+                                .align_x(alignment::Horizontal::Right),
                         ]
-                        .spacing(6)
-                        .align_y(alignment::Alignment::Center),
+                        .spacing(8)
+                        .align_y(alignment::Alignment::Center)
+                        .width(Length::Fill),
                     ]
-                    .spacing(6),
+                    .spacing(8),
                 )
                 .padding(8)
                 .style(|_| iced::widget::container::Style {
@@ -408,7 +417,7 @@ impl App {
                     iced::widget::column![
                         tooltip(
                             text("Timeout").size(12),
-                            "How long to search before failing this target click",
+                            "Sets how long to search before this target click fails.",
                             TooltipPosition::Top,
                         )
                         .gap(6)
@@ -425,25 +434,31 @@ impl App {
                             snap: false,
                         }),
                         row![
-                            tooltip(
-                                slider(
-                                    200..=10000,
-                                    self.editor_target_timeout_ms,
-                                    Message::EditorTargetTimeoutMsChanged,
+                            container(
+                                tooltip(
+                                    slider(
+                                        200..=10000,
+                                        self.editor_target_timeout_ms,
+                                        Message::EditorTargetTimeoutMsChanged,
+                                    )
+                                    .width(Length::Fill),
+                                    text(format!("{} ms", self.editor_target_timeout_ms)),
+                                    TooltipPosition::Top,
                                 )
-                                .width(Length::Fixed(140.0)),
-                                text(format!("{} ms", self.editor_target_timeout_ms)),
-                                TooltipPosition::Top,
+                                .gap(6)
+                                .padding(8)
+                                .style(|_| slider_tooltip_frame_style()),
                             )
-                            .gap(6)
-                            .padding(8)
-                            .style(|_| slider_tooltip_frame_style()),
-                            text(format!("{} ms", self.editor_target_timeout_ms)).size(12),
+                            .width(Length::Fill),
+                            container(text(format!("{} ms", self.editor_target_timeout_ms)).size(12))
+                                .width(Length::Fixed(VALUE_COL_W))
+                                .align_x(alignment::Horizontal::Right),
                         ]
-                        .spacing(6)
-                        .align_y(alignment::Alignment::Center),
+                        .spacing(8)
+                        .align_y(alignment::Alignment::Center)
+                        .width(Length::Fill),
                     ]
-                    .spacing(6),
+                    .spacing(8),
                 )
                 .padding(8)
                 .style(|_| iced::widget::container::Style {
@@ -525,7 +540,6 @@ impl App {
                                         snap: false,
                                     }),
                                     text(format!("GET:  {grabbed_xy_text}")).size(12),
-                                    button(text("JUMP")).on_press(Message::EditorJumpToXY),
                                 ]
                                 .spacing(4)
                                 .into(),
@@ -562,7 +576,6 @@ impl App {
                                 iced::widget::column![
                                     text("(static preview failed)").size(12),
                                     text(format!("GET:  {grabbed_xy_text}")).size(12),
-                                    button(text("JUMP")).on_press(Message::EditorJumpToXY),
                                 ]
                                 .spacing(4)
                                 .into(),
@@ -631,7 +644,6 @@ impl App {
                                     snap: false,
                                 }),
                                 text(format!("GET:  {grabbed_xy_text}")).size(12),
-                                button(text("JUMP")).on_press(Message::EditorJumpToXY),
                             ]
                             .spacing(4)
                             .into(),
@@ -702,25 +714,33 @@ impl App {
         let wait_group: Element<Message> = container(
             iced::widget::column![
                 row![
-                    text("Wait:").size(14),
-                    tooltip(
-                        slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
-                            .width(Length::Fixed(180.0)),
-                        text(format!("{} ms", self.editor_wait_ms)),
-                        TooltipPosition::Top,
+                    text("Wait:").size(14).width(Length::Fixed(TARGET_COL_W)),
+                    container(
+                        tooltip(
+                            slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
+                                .width(Length::Fill),
+                            text(format!("{} ms", self.editor_wait_ms)),
+                            TooltipPosition::Top,
+                        )
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| slider_tooltip_frame_style()),
                     )
-                    .gap(6)
-                    .padding(8)
-                    .style(|_| slider_tooltip_frame_style()),
-                    text(format!("{} ms", self.editor_wait_ms)).size(12),
+                    .width(Length::Fill),
+                    container(text(format!("{} ms", self.editor_wait_ms)).size(12))
+                        .width(Length::Fixed(VALUE_COL_W))
+                        .align_x(alignment::Horizontal::Right),
                 ]
                 .spacing(8)
-                .align_y(alignment::Alignment::Center),
+                .align_y(alignment::Alignment::Center)
+                .width(Length::Fill),
             ]
             .spacing(8)
-            .align_x(alignment::Alignment::Start),
+            .align_x(alignment::Alignment::Start)
+            .width(Length::Fill),
         )
         .padding(8)
+        .width(Length::Fill)
         .style(|_| iced::widget::container::Style {
             text_color: None,
             background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
@@ -736,71 +756,91 @@ impl App {
 
         let threshold_group: Element<Message> = container(
             iced::widget::column![
-                text("Click detection thresholds").size(13),
+                text("Click detection thresholds").size(13).color(Color::from_rgb8(0xc0, 0xca, 0xd6)),
                 row![
                     container(text("Click speed:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    tooltip(
-                        slider(
-                            0..=100,
-                            self.editor_click_speed_ms,
-                            Message::EditorClickSpeedMsChanged,
+                    container(
+                        tooltip(
+                            slider(
+                                0..=100,
+                                self.editor_click_speed_ms,
+                                Message::EditorClickSpeedMsChanged,
+                            )
+                            .style(|_theme, _status| speed_slider_style(false))
+                            .width(Length::Fill),
+                            text(format!("{} ms", self.editor_click_speed_ms)),
+                            TooltipPosition::Top,
                         )
-                        .style(|_theme, _status| speed_slider_style(false))
-                        .width(Length::Fixed(180.0)),
-                        text(format!("{} ms", self.editor_click_speed_ms)),
-                        TooltipPosition::Top,
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| slider_tooltip_frame_style()),
                     )
-                    .gap(6)
-                    .padding(8)
-                    .style(|_| slider_tooltip_frame_style()),
-                    text(format!("{} ms", self.editor_click_speed_ms)).size(12),
+                    .width(Length::Fill),
+                    container(text(format!("{} ms", self.editor_click_speed_ms)).size(12))
+                        .width(Length::Fixed(VALUE_COL_W))
+                        .align_x(alignment::Horizontal::Right),
                 ]
                 .spacing(8)
-                .align_y(alignment::Alignment::Center),
+                .align_y(alignment::Alignment::Center)
+                .width(Length::Fill),
                 row![
                     container(text("Pixel split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    tooltip(
-                        slider(
-                            0..=20,
-                            self.editor_click_split_px,
-                            Message::EditorClickSplitPxChanged,
+                    container(
+                        tooltip(
+                            slider(
+                                0..=20,
+                                self.editor_click_split_px,
+                                Message::EditorClickSplitPxChanged,
+                            )
+                            .style(|_theme, _status| speed_slider_style(false))
+                            .width(Length::Fill),
+                            text(format!("{} px", self.editor_click_split_px)),
+                            TooltipPosition::Top,
                         )
-                        .style(|_theme, _status| speed_slider_style(false))
-                        .width(Length::Fixed(180.0)),
-                        text(format!("{} px", self.editor_click_split_px)),
-                        TooltipPosition::Top,
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| slider_tooltip_frame_style()),
                     )
-                    .gap(6)
-                    .padding(8)
-                    .style(|_| slider_tooltip_frame_style()),
-                    text(format!("{} px", self.editor_click_split_px)).size(12),
+                    .width(Length::Fill),
+                    container(text(format!("{} px", self.editor_click_split_px)).size(12))
+                        .width(Length::Fixed(VALUE_COL_W))
+                        .align_x(alignment::Horizontal::Right),
                 ]
                 .spacing(8)
-                .align_y(alignment::Alignment::Center),
+                .align_y(alignment::Alignment::Center)
+                .width(Length::Fill),
                 row![
                     container(text("Hold split:").size(13)).width(Length::Fixed(TARGET_COL_W)),
-                    tooltip(
-                        slider(
-                            0..=100,
-                            self.editor_click_max_hold_ms,
-                            Message::EditorClickMaxHoldMsChanged,
+                    container(
+                        tooltip(
+                            slider(
+                                0..=100,
+                                self.editor_click_max_hold_ms,
+                                Message::EditorClickMaxHoldMsChanged,
+                            )
+                            .style(|_theme, _status| speed_slider_style(false))
+                            .width(Length::Fill),
+                            text(format!("{} ms", self.editor_click_max_hold_ms)),
+                            TooltipPosition::Top,
                         )
-                        .style(|_theme, _status| speed_slider_style(false))
-                        .width(Length::Fixed(180.0)),
-                        text(format!("{} ms", self.editor_click_max_hold_ms)),
-                        TooltipPosition::Top,
+                        .gap(6)
+                        .padding(8)
+                        .style(|_| slider_tooltip_frame_style()),
                     )
-                    .gap(6)
-                    .padding(8)
-                    .style(|_| slider_tooltip_frame_style()),
-                    text(format!("{} ms", self.editor_click_max_hold_ms)).size(12),
+                    .width(Length::Fill),
+                    container(text(format!("{} ms", self.editor_click_max_hold_ms)).size(12))
+                        .width(Length::Fixed(VALUE_COL_W))
+                        .align_x(alignment::Horizontal::Right),
                 ]
                 .spacing(8)
-                .align_y(alignment::Alignment::Center),
+                .align_y(alignment::Alignment::Center)
+                .width(Length::Fill),
             ]
-            .spacing(6),
+            .spacing(6)
+            .width(Length::Fill),
         )
         .padding(8)
+        .width(Length::Fill)
         .style(|_| iced::widget::container::Style {
             text_color: None,
             background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
@@ -816,22 +856,23 @@ impl App {
 
         let mode_rows = iced::widget::column![
             row![
-                container(text("Click target:").size(14)).width(Length::Fixed(TARGET_COL_W)),
-                text("Click properties:").size(14),
+                container(text("Click target:").size(14).color(Color::from_rgb8(0xd2, 0xda, 0xe5))).width(Length::Fixed(TARGET_COL_W)),
+                container(text("Click properties:").size(14).color(Color::from_rgb8(0xd2, 0xda, 0xe5))).width(Length::Fill),
             ]
             .align_y(alignment::Alignment::Center)
-            .spacing(6),
+            .spacing(8)
+            .width(Length::Fill),
             left_row,
             right_row,
             middle_row,
             threshold_group,
         ]
-        .spacing(6);
+        .spacing(8)
+        .width(Length::Fill);
 
-        let mode_group: Element<Message> = container(
-            mode_rows,
-        )
+        let mode_group: Element<Message> = container(mode_rows)
         .padding(8)
+        .width(Length::Fill)
         .style(|_| iced::widget::container::Style {
             text_color: None,
             background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
@@ -852,19 +893,6 @@ impl App {
                 .into(),
         ];
 
-        if self.selected_index.is_some() {
-            button_items.push(
-                container(
-                    button(text("CLONE NEW CLICK"))
-                        .style(iced::widget::button::secondary)
-                        .on_press(Message::EditorInsertBelowSelected),
-                )
-                    .width(Length::Fill)
-                    .align_x(alignment::Horizontal::Center)
-                    .into(),
-            );
-        }
-
         if self.editor_capture_armed {
             button_items.push(
                 text("Capture armed: click Left/Right/Middle to set X,Y (ESC cancels)")
@@ -874,7 +902,7 @@ impl App {
         }
 
         let buttons_group: Element<Message> = container(
-            column(button_items).spacing(if self.editor_capture_armed || self.selected_index.is_some() { 8 } else { 0 }),
+            column(button_items).spacing(if self.editor_capture_armed { 8 } else { 0 }),
         )
         .padding(6)
         .width(Length::Fill)
@@ -937,14 +965,6 @@ impl App {
     }
 
     pub(crate) fn view_properties_panel(&self) -> iced::widget::Container<'_, Message> {
-        let title_row = row![
-            text("Properties").size(16),
-            container(iced::widget::Space::new()).width(Length::Fill),
-            button(text("Delete")).on_press(Message::ClearSelection),
-        ]
-        .spacing(8)
-        .align_y(alignment::Alignment::Center);
-
         let body: Element<Message> = {
             let selection_note: Element<Message> = match self.selected_index {
                 Some(index) => text(format!("Selected row: {}", index)).size(12).into(),
@@ -969,7 +989,7 @@ impl App {
         let body_scroll = scrollable(body_scroll_content)
             .height(Length::Fill);
 
-        container(iced::widget::column![title_row, body_scroll].spacing(12).padding(12))
+        container(container(body_scroll).padding(12))
             .height(Length::Fill)
             .width(Length::Fill)
             .style(|_| iced::widget::container::Style {

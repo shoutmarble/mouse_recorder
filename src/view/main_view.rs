@@ -63,24 +63,24 @@ impl App {
                 button(record_icon)
                     .padding(8)
                     .on_press_maybe(can_record.then_some(Message::StartRecording)),
-                "Record (starts on first click)",
+                "Starts recording on the first click.",
                 TooltipPosition::Top,
             ),
             tooltip(
                 button(stop_icon).padding(8).on_press(Message::StopRecording),
-                "Stop (ESC also works)",
+                "Stops recording or playback. Press ESC as a shortcut.",
                 TooltipPosition::Top,
             ),
             tooltip(
                 button(play_icon)
                     .padding(8)
                     .on_press_maybe(can_play.then_some(Message::StartPlayback)),
-                "Play back the current list",
+                "Plays back the current event list.",
                 TooltipPosition::Top,
             ),
             tooltip(
                 button(clear_icon).padding(8).on_press(Message::Clear),
-                "Clear all recorded rows",
+                "Clears all recorded rows.",
                 TooltipPosition::Top,
             ),
         ]
@@ -96,14 +96,14 @@ impl App {
                 button(text("⭳").size(18))
                     .padding(8)
                     .on_press(Message::LoadFromFile),
-                "Load recording",
+                "Loads a recording from the selected file.",
                 TooltipPosition::Top,
             ),
             tooltip(
                 button(text("💾").size(18))
                     .padding(8)
                     .on_press(Message::SaveToFile),
-                "Save recording",
+                "Saves the current recording to the selected file.",
                 TooltipPosition::Top,
             ),
         ]
@@ -140,6 +140,7 @@ impl App {
             text("Img").size(14).width(Length::Fixed(48.0)),
             text("Action").size(14).width(Length::Fixed(220.0)),
             text("Value").size(14).width(Length::Fill),
+            text("Ops").size(14).width(Length::Fixed(112.0)),
         ]
         .spacing(10)
         .align_y(alignment::Alignment::Center);
@@ -250,7 +251,34 @@ impl App {
             )
             .on_press(Message::SelectRow(row_end));
 
-            let row_content = row![clickable]
+            let row_ops = row![
+                tooltip(
+                    button(text("↗").size(14))
+                        .padding([4, 8])
+                        .on_press(Message::RowJump(row_end)),
+                    "Jump to this row target",
+                    TooltipPosition::Top,
+                ),
+                tooltip(
+                    button(text("⧉").size(14))
+                        .padding([4, 8])
+                        .on_press(Message::RowClone(row_end)),
+                    "Clone this row",
+                    TooltipPosition::Top,
+                ),
+                tooltip(
+                    button(text("🗑").size(14))
+                        .padding([4, 8])
+                        .on_press(Message::RowDelete(row_end)),
+                    "Delete this row",
+                    TooltipPosition::Top,
+                ),
+            ]
+            .spacing(6)
+            .width(Length::Fixed(112.0))
+            .align_y(alignment::Alignment::Center);
+
+            let row_content = row![container(clickable).width(Length::Fill), row_ops]
                 .spacing(10)
                 .align_y(alignment::Alignment::Center);
 
@@ -312,6 +340,7 @@ impl App {
                 container(iced::widget::Space::new()).width(Length::Fixed(48.0)),
                 text("LIVE|(X,Y)").size(14).width(Length::Fixed(220.0)),
                 text(pos_value).size(14).width(Length::Fill),
+                container(iced::widget::Space::new()).width(Length::Fixed(112.0)),
             ]
             .spacing(10)
             .align_y(alignment::Alignment::Center)
@@ -332,7 +361,7 @@ impl App {
             self.view_properties_panel(),
         ]
         .spacing(10)
-        .width(Length::Fixed(520.0))
+        .width(Length::Fixed(self.right_panel_width_px()))
         .height(Length::Fill);
 
         let bottom = row![actions_panel, right_panel]

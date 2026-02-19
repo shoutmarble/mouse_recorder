@@ -37,7 +37,7 @@ impl App {
                     pos: None,
                     click_meta: None,
                 });
-                self.status = "Added Wait row".to_string();
+                self.status = "Added wait row.".to_string();
                 Ok(Task::none())
             }
             Message::FindTargetOk => {
@@ -48,7 +48,7 @@ impl App {
                     return Ok(Task::none());
                 };
                 let Some(patch_png_base64) = draft.patch_png_base64 else {
-                    self.find_target_modal = Some(FindTargetDraft { status: "No image selected".to_string(), ..draft });
+                    self.find_target_modal = Some(FindTargetDraft { status: "No image selected.".to_string(), ..draft });
                     return Ok(Task::none());
                 };
 
@@ -73,7 +73,7 @@ impl App {
                     click_meta: None,
                 });
 
-                self.status = "Added Find target row (move only)".to_string();
+                self.status = "Added find-target row (move only).".to_string();
                 Ok(Task::none())
             }
             Message::FindTargetPatchSizeChanged(txt) => {
@@ -133,12 +133,12 @@ impl App {
                     {
                         draft.capture_waiting = true;
                         draft.capture_left_was_down = is_vk_down_windows(VK_LBUTTON);
-                        draft.status = "Click on the screen to capture".to_string();
+                        draft.status = "Click on the screen to capture.".to_string();
                     }
 
                     #[cfg(not(windows))]
                     {
-                        draft.status = "Capture is Windows-only right now".to_string();
+                        draft.status = "Capture is currently Windows-only.".to_string();
                     }
                 }
                 Ok(Task::none())
@@ -159,7 +159,7 @@ impl App {
                                         draft.patch_png_base64 = Some(b64);
                                         draft.captured_pos = Some((x, y));
                                         draft.capture_waiting = false;
-                                        draft.status = "Captured".to_string();
+                                        draft.status = "Captured.".to_string();
                                     }
                                     Err(err) => {
                                         draft.capture_waiting = false;
@@ -168,7 +168,7 @@ impl App {
                                 }
                             } else {
                                 draft.capture_waiting = false;
-                                draft.status = "Could not read mouse position".to_string();
+                                draft.status = "Could not read mouse position.".to_string();
                             }
                         }
                         draft.capture_left_was_down = left_now;
@@ -186,7 +186,7 @@ impl App {
                 if let Some(draft) = &mut self.find_target_modal {
                     let path = draft.image_path.trim();
                     if path.is_empty() {
-                        draft.status = "Provide a path".to_string();
+                        draft.status = "Please provide a path.".to_string();
                         return Ok(Task::none());
                     }
 
@@ -197,7 +197,7 @@ impl App {
                             draft.patch_png_base64 = Some(general_purpose::STANDARD.encode(bytes));
                             draft.captured_pos = self.current_pos;
                             draft.capture_waiting = false;
-                            draft.status = "Loaded".to_string();
+                            draft.status = "Loaded.".to_string();
                         }
                         Err(err) => {
                             draft.status = format!("Load failed: {err}");
