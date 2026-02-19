@@ -352,9 +352,25 @@ impl App {
             .height(Length::Fill)
             .width(Length::Fill);
 
-        let actions_panel = iced::widget::column![table_header, list]
-            .spacing(8)
-            .width(Length::FillPortion(3));
+        let actions_panel = container(
+            iced::widget::column![table_header, list]
+                .spacing(8)
+                .width(Length::Fill),
+        )
+        .padding(8)
+        .width(Length::FillPortion(3))
+        .height(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x1a, 0x1e, 0x24))),
+            border: Border {
+                color: Color::from_rgb8(0x4a, 0x54, 0x62),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        });
 
         let right_panel = iced::widget::column![
             self.view_scale_panel(),
