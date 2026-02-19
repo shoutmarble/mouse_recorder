@@ -41,7 +41,7 @@ fn main() -> iced::Result {
         .scale_factor(App::ui_scale_factor)
         .window(iced::window::Settings {
             // Roughly: 1/2 width and 2/3 height of a typical 1024x768 default.
-            size: iced::Size::new(1040.0, 1082.0),
+            size: iced::Size::new(1140.0, 1052.0),
             ..Default::default()
         })
         .subscription(App::subscription)
@@ -175,8 +175,8 @@ impl Default for App {
             playback_active_index: None,
             playback_last_scrolled_index: None,
             playback_progress_row_map: Vec::new(),
-            window_width_px: 1040.0,
-            window_height_px: 1082.0,
+            window_width_px: 1140.0,
+            window_height_px: 1052.0,
             recorder_state: Arc::new(Mutex::new(RecorderState::default())),
         }
     }

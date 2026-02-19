@@ -140,6 +140,28 @@ impl App {
         .align_y(alignment::Alignment::Center)
         .width(Length::Fill);
 
+        let wait_row = row![
+            text("Wait:").size(14).width(Length::Fixed(140.0)),
+            container(
+                tooltip(
+                    slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
+                        .width(Length::Fill),
+                    text(format!("{} ms", self.editor_wait_ms)),
+                    TooltipPosition::Top,
+                )
+                .gap(6)
+                .padding(8)
+                .style(|_| slider_tooltip_frame_style()),
+            )
+            .width(Length::Fill),
+            container(text(format!("{} ms", self.editor_wait_ms)).size(12))
+                .width(Length::Fixed(VALUE_COL_W))
+                .align_x(alignment::Horizontal::Right),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center)
+        .width(Length::Fill);
+
         let mouse_path_main_pane: Element<Message> = container(
             iced::widget::column![toggle_row]
                 .spacing(8)
@@ -192,8 +214,24 @@ impl App {
         })
         .into();
 
+        let wait_pane: Element<Message> = container(wait_row)
+        .padding(8)
+        .width(Length::Fill)
+        .style(|_| iced::widget::container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(0x12, 0x18, 0x20))),
+            border: Border {
+                color: Color::from_rgb8(0x5d, 0x6d, 0x82),
+                width: 1.0,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow::default(),
+            snap: false,
+        })
+        .into();
+
         container(
-            iced::widget::column![mouse_path_main_pane, speed_pane, sampling_pane]
+            iced::widget::column![mouse_path_main_pane, speed_pane, sampling_pane, wait_pane]
                 .spacing(8)
                 .width(Length::Fill),
         )
@@ -711,49 +749,6 @@ impl App {
             "INSERT CLICK"
         };
 
-        let wait_group: Element<Message> = container(
-            iced::widget::column![
-                row![
-                    text("Wait:").size(14).width(Length::Fixed(TARGET_COL_W)),
-                    container(
-                        tooltip(
-                            slider(0..=300, self.editor_wait_ms, Message::EditorWaitMsChanged)
-                                .width(Length::Fill),
-                            text(format!("{} ms", self.editor_wait_ms)),
-                            TooltipPosition::Top,
-                        )
-                        .gap(6)
-                        .padding(8)
-                        .style(|_| slider_tooltip_frame_style()),
-                    )
-                    .width(Length::Fill),
-                    container(text(format!("{} ms", self.editor_wait_ms)).size(12))
-                        .width(Length::Fixed(VALUE_COL_W))
-                        .align_x(alignment::Horizontal::Right),
-                ]
-                .spacing(8)
-                .align_y(alignment::Alignment::Center)
-                .width(Length::Fill),
-            ]
-            .spacing(8)
-            .align_x(alignment::Alignment::Start)
-            .width(Length::Fill),
-        )
-        .padding(8)
-        .width(Length::Fill)
-        .style(|_| iced::widget::container::Style {
-            text_color: None,
-            background: Some(Background::Color(Color::from_rgb8(0x1c, 0x21, 0x28))),
-            border: Border {
-                color: Color::from_rgb8(0x76, 0x85, 0x96),
-                width: 1.0,
-                radius: 8.0.into(),
-            },
-            shadow: Shadow::default(),
-            snap: false,
-        })
-        .into();
-
         let threshold_group: Element<Message> = container(
             iced::widget::column![
                 text("Click detection thresholds").size(13).color(Color::from_rgb8(0xc0, 0xca, 0xd6)),
@@ -941,7 +936,6 @@ impl App {
         let click_editor_content = iced::widget::column![
             text("Click editor").size(16),
             preview_group,
-            wait_group,
             mode_group,
             buttons_group,
         ]
