@@ -302,6 +302,47 @@ impl App {
             .into()
     }
 
+    pub(crate) fn view_file_panel(&self) -> Element<'_, Message> {
+        let file_row = row![
+            text("File:").size(14).width(Length::Fixed(56.0)),
+            text_input("recording.yaml", &self.file_path)
+                .on_input(Message::FilePathChanged)
+                .width(Length::Fill),
+            tooltip(
+                button(text("⭳").size(18))
+                    .padding(8)
+                    .on_press(Message::LoadFromFile),
+                "Loads a recording from the selected file.",
+                TooltipPosition::Top,
+            ),
+            tooltip(
+                button(text("💾").size(18))
+                    .padding(8)
+                    .on_press(Message::SaveToFile),
+                "Saves the current recording to the selected file.",
+                TooltipPosition::Top,
+            ),
+        ]
+        .spacing(8)
+        .align_y(alignment::Alignment::Center);
+
+        container(file_row)
+            .padding(10)
+            .width(Length::Fill)
+            .style(|_| iced::widget::container::Style {
+                text_color: None,
+                background: Some(Background::Color(Color::from_rgb8(0x1f, 0x22, 0x26))),
+                border: Border {
+                    color: Color::from_rgb8(0x3a, 0x3f, 0x46),
+                    width: 1.0,
+                    radius: 8.0.into(),
+                },
+                shadow: Shadow::default(),
+                snap: false,
+            })
+            .into()
+    }
+
     pub(crate) fn view_click_editor_panel(&self) -> Element<'_, Message> {
         const PREVIEW_IMAGE_SIZE: f32 = 128.0;
         const PREVIEW_FRAME_PADDING: f32 = 2.0;

@@ -87,35 +87,10 @@ impl App {
         .spacing(10)
         .align_y(alignment::Alignment::Center);
 
-        let file_group = row![
-            text("File:").size(14),
-            text_input("recording.yaml", &self.file_path)
-                .on_input(Message::FilePathChanged)
-                .width(Length::Fixed(240.0)),
-            tooltip(
-                button(text("⭳").size(18))
-                    .padding(8)
-                    .on_press(Message::LoadFromFile),
-                "Loads a recording from the selected file.",
-                TooltipPosition::Top,
-            ),
-            tooltip(
-                button(text("💾").size(18))
-                    .padding(8)
-                    .on_press(Message::SaveToFile),
-                "Saves the current recording to the selected file.",
-                TooltipPosition::Top,
-            ),
-        ]
-        .spacing(8)
-        .align_y(alignment::Alignment::Center);
-
         let ribbon_row = row![
             text("Mouse Recorder").size(18),
             container(iced::widget::Space::new()).width(Length::Fixed(10.0)),
             run_group,
-            container(iced::widget::Space::new()).width(Length::Fixed(10.0)),
-            file_group,
             container(iced::widget::Space::new()).width(Length::Fill),
         ]
         .spacing(8)
@@ -374,6 +349,7 @@ impl App {
 
         let right_panel = iced::widget::column![
             self.view_scale_panel(),
+            self.view_file_panel(),
             self.view_properties_panel(),
         ]
         .spacing(10)
